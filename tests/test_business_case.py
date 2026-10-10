@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import os
 import shutil
 import subprocess
@@ -187,14 +188,78 @@ def test_workbook_states_the_counting_rules_and_fiction(workbook_path):
     assert "A benefit counts only once" in text
 
 
+def workbook_content(path: Path) -> tuple[list[str], dict, dict]:
+    """What a workbook *says*: sheet order, defined names, and each cell's value or formula.
+
+    File bytes and metadata are ignored on purpose: the zip layout, the
+    docProps timestamps and author, styles and the formula results cached by
+    Excel. Two workbooks with the same content compare equal even if they were
+    saved at different times or by different programs. Formulas are compared
+    as their text (openpyxl with data_only=False), so a changed formula is a
+    difference even if it happens to give the same result.
+    """
+    wb = load_workbook(path, data_only=False)
+    cells = {}
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                if cell.value is not None:
+                    # Array formulas come back as objects; compare their text.
+                    cells[(ws.title, cell.coordinate)] = getattr(cell.value, "text", cell.value)
+    names = {name: sorted(dn.destinations) for name, dn in wb.defined_names.items()}
+    return wb.sheetnames, names, cells
+
+
+def content_diff(a: Path, b: Path, limit: int = 10) -> list[str]:
+    """Readable list of the differences between two workbooks' content."""
+    sheets_a, names_a, cells_a = workbook_content(a)
+    sheets_b, names_b, cells_b = workbook_content(b)
+    diffs = []
+    if sheets_a != sheets_b:
+        diffs.append(f"sheets: {sheets_a} != {sheets_b}")
+    if names_a != names_b:
+        diffs.append(f"defined names differ: {sorted(set(names_a.items()) ^ set(names_b.items()))[:limit]}")
+    for key in sorted(set(cells_a) | set(cells_b)):
+        if cells_a.get(key) != cells_b.get(key):
+            diffs.append(f"{key[0]}!{key[1]}: {cells_a.get(key)!r} != {cells_b.get(key)!r}")
+    return diffs[:limit]
+
+
 def test_committed_template_workbook_matches_generator(case, tmp_path):
-    """templates/business_case.xlsx must be regenerated after changing the inputs or the model."""
-    committed = load_workbook(TEMPLATE_INPUTS.parent / "business_case.xlsx")
-    fresh = load_workbook(bc.build_workbook(case, tmp_path / "fresh.xlsx"))
-    for name in fresh.sheetnames:
-        a, b = committed[name], fresh[name]
-        assert [[c.value for c in row] for row in a.iter_rows()] == \
-               [[c.value for c in row] for row in b.iter_rows()], name
+    """templates/business_case.xlsx must be regenerated after changing the inputs or the model.
+
+    Compares cell values and formulas, not file bytes or metadata (see workbook_content).
+    """
+    committed = TEMPLATE_INPUTS.parent / "business_case.xlsx"
+    fresh = bc.build_workbook(case, tmp_path / "fresh.xlsx")
+    diffs = content_diff(committed, fresh)
+    assert not diffs, "Regenerate templates/business_case.xlsx:\n" + "\n".join(diffs)
+
+
+def test_workbook_comparison_ignores_bytes_and_metadata(workbook_path, tmp_path):
+    other = tmp_path / "same_content.xlsx"
+    wb = load_workbook(workbook_path)
+    wb.properties.creator = "someone else"
+    wb.properties.title = "different title"
+    wb.properties.created = wb.properties.modified = dt.datetime(2001, 1, 1)
+    wb.save(other)
+    assert other.read_bytes() != workbook_path.read_bytes()
+    assert content_diff(workbook_path, other) == []
+
+
+def test_workbook_comparison_detects_a_changed_formula_or_value(workbook_path, tmp_path):
+    changed = tmp_path / "changed.xlsx"
+    wb = load_workbook(workbook_path)
+    calc = wb["Calculation"]
+    formula_cell = next(c for row in calc.iter_rows(min_row=6) for c in row
+                        if isinstance(c.value, str) and c.value.startswith("="))
+    formula_cell.value = formula_cell.value + "*1"   # same result, different formula
+    wb["Inputs"]["A1"].value = "edited text"
+    wb.save(changed)
+    diffs = content_diff(workbook_path, changed)
+    assert len(diffs) == 2
+    assert any(f"Calculation!{formula_cell.coordinate}" in d for d in diffs)
+    assert any("Inputs!A1" in d for d in diffs)
 
 
 @pytest.mark.skipif(os.environ.get("RUN_EXCEL_TESTS") != "1" or sys.platform != "win32" or not shutil.which("powershell"),
