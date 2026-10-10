@@ -95,7 +95,10 @@ business case, and give each case a first EU AI Act risk category.
 
 **Outputs**
 - A screening AI Act category: prohibited, high-risk, limited risk
-  (transparency), minimal risk, or not an AI system.
+  (transparency), minimal risk, not an AI system, or excluded (used
+  exclusively for military, defence or national security).
+  `python -m scoring.triage examples/<ID>_<name>/triage.yaml` computes it
+  from the checklist answers.
 - A gate result: *pass*, *park* or *reject*, with the reason.
 - The list of obligations and conditions to carry into the business case
   (for example, a transparency notice or an on-premise hosting requirement).
