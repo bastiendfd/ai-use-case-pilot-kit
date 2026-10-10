@@ -189,6 +189,8 @@ back, and which assumptions the answer depends on.
   its summary [`templates/business_case.md`](templates/business_case.md):
   annual benefit, one-off cost, run cost, payback, 3-year NPV, simple ROI, and
   pessimistic / base / optimistic scenarios.
+  `python -m scoring.business_case <inputs.yaml> --xlsx <file> --md <file>`
+  builds both from one inputs file.
 - An assumptions log with a source and a confidence level for every input.
 - A [`templates/decision_record.md`](templates/decision_record.md).
 
