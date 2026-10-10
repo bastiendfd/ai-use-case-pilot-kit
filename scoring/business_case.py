@@ -76,7 +76,15 @@ RULES = [
     "Run costs are part of the case: licences, hosting, monitoring, support, retraining.",
     "Scenarios change only the three most uncertain inputs. All other inputs stay at their base value.",
     "Every input has a source or reasoning and a confidence level in the assumptions log.",
+    "A negative scenario is a decision input, not a footnote. If the 3-year NPV is negative in any "
+    "scenario, the case can only be approved with conditions: a review gate 3 months after go-live, "
+    "and stop or rework if adoption or time saved fall to their pessimistic values.",
 ]
+
+# Downside rule (see RULES): review gate and the inputs checked at the gate.
+REVIEW_GATE_MONTHS = 3
+# "Time saved" is driven by minutes_after; "adoption" by adoption_steady.
+GATE_DRIVERS_DEFAULT = ("minutes_after", "adoption_steady")
 
 
 # ---------------------------------------------------------------------------
@@ -91,6 +99,8 @@ class CaseInputs:
     fictional: bool
     inputs: dict[str, dict]        # id -> {label, value, unit, source, confidence}
     scenarios: dict[str, dict]     # id -> {pessimistic, optimistic, why}
+    # Optional: scenario inputs checked at the review gate (default: GATE_DRIVERS_DEFAULT).
+    gate_drivers: tuple[str, ...] | None = None
 
     def values(self, scenario: str = "base") -> dict[str, float]:
         """Input values for one scenario."""
@@ -148,6 +158,15 @@ def load_inputs(path: Path) -> CaseInputs:
                                   or (key in SHARE_INPUTS and v > 1)):
                 errors.append(f"{path}: scenario '{key}' {field} value '{v}' is out of range.")
 
+    gate_drivers = raw.get("review_gate_drivers")
+    if gate_drivers is not None:
+        if not isinstance(gate_drivers, list) or not gate_drivers:
+            errors.append(f"{path}: review_gate_drivers must be a non-empty list of scenario inputs.")
+        else:
+            bad = [str(k) for k in gate_drivers if k not in scenarios]
+            if bad:
+                errors.append(f"{path}: review_gate_drivers {', '.join(bad)} must be scenario inputs.")
+
     if not errors:
         vals = {k: float(v["value"]) for k, v in inputs.items()}
         if vals["minutes_after"] > vals["minutes_before"] and "minutes_after" not in scenarios:
@@ -164,6 +183,7 @@ def load_inputs(path: Path) -> CaseInputs:
         fictional=bool(raw.get("fictional", False)),
         inputs={k: inputs[k] for k in INPUT_SPEC},
         scenarios=scenarios,
+        gate_drivers=tuple(gate_drivers) if gate_drivers else None,
     )
 
 
@@ -228,6 +248,77 @@ def compute(v: dict[str, float]) -> dict:
 
 def compute_all(case: CaseInputs) -> dict[str, dict]:
     return {sc: compute(case.values(sc)) for sc in SCENARIOS}
+
+
+def downside(case: CaseInputs, results: dict[str, dict] | None = None,
+             drivers: tuple[str, ...] | None = None) -> dict:
+    """Downside view used by the review-gate rule.
+
+    Returns:
+    - ``negative_scenarios``: scenarios with a negative 3-year NPV;
+    - ``pessimistic_npv``: NPV with all three scenario inputs at pessimistic;
+    - ``drivers``: one entry per scenario input with its base and pessimistic
+      value, whether a higher value is worse, the NPV when only this input is
+      at its pessimistic value, and whether it is a stop/rework trigger;
+    - ``npv_at_triggers``: NPV when only the trigger inputs are at pessimistic.
+
+    Trigger inputs: ``drivers`` if given, else ``review_gate_drivers`` from
+    the inputs file, else GATE_DRIVERS_DEFAULT (time saved and adoption)
+    among the scenario inputs.
+    """
+    results = results or compute_all(case)
+    base_values = case.values("base")
+    drivers = drivers if drivers is not None else case.gate_drivers
+    triggers = tuple(drivers) if drivers is not None else tuple(
+        k for k in GATE_DRIVERS_DEFAULT if k in case.scenarios)
+    unknown = [k for k in triggers if k not in case.scenarios]
+    if unknown:
+        raise InputError([f"Review-gate driver(s) {', '.join(unknown)} must be scenario inputs "
+                          f"({', '.join(case.scenarios)})."])
+    rows = []
+    for key, s in case.scenarios.items():
+        pess = float(s["pessimistic"])
+        rows.append({
+            "input": key,
+            "label": case.inputs[key]["label"],
+            "unit": case.inputs[key]["unit"],
+            "base": base_values[key],
+            "pessimistic": pess,
+            "higher_is_worse": pess > base_values[key],
+            "npv_if_only_this": compute(dict(base_values, **{key: pess}))["npv_3y"],
+            "trigger": key in triggers,
+        })
+        if key == "minutes_after":
+            rows[-1]["time_saved_base"] = base_values["minutes_before"] - base_values[key]
+            rows[-1]["time_saved_pessimistic"] = base_values["minutes_before"] - pess
+    at_triggers = dict(base_values, **{k: float(case.scenarios[k]["pessimistic"]) for k in triggers})
+    return {
+        "negative_scenarios": [sc for sc in SCENARIOS if results[sc]["npv_3y"] < 0],
+        "pessimistic_npv": results["pessimistic"]["npv_3y"],
+        "drivers": rows,
+        "trigger_inputs": triggers,
+        "npv_at_triggers": compute(at_triggers)["npv_3y"],
+    }
+
+
+def minutes(value: float) -> str:
+    """'1 minute', '1.5 minutes', '3 minutes'."""
+    return f"{_fmt('minutes_after', value)} minute{'' if value == 1 else 's'}"
+
+
+def trigger_text(row: dict) -> str:
+    """Stop/rework threshold for one driver, e.g. 'at or below 60%'.
+
+    For handling time, the threshold is stated as time saved, which is what
+    the rule is about: 'time saved at or below 3 minutes per transaction
+    (handling time at or above 3 minutes)'.
+    """
+    side = "at or above" if row["higher_is_worse"] else "at or below"
+    if "time_saved_pessimistic" in row:
+        return (f"time saved at or below {minutes(row['time_saved_pessimistic'])} per transaction "
+                f"(handling time {side} {minutes(row['pessimistic'])})")
+    unit = "" if row["input"] in SHARE_INPUTS else f" {row['unit']}"
+    return f"{side} {_fmt(row['input'], row['pessimistic'])}{unit}"
 
 
 # ---------------------------------------------------------------------------
@@ -572,8 +663,54 @@ def render_markdown(case: CaseInputs, results: dict[str, dict] | None = None) ->
     for key, s in case.scenarios.items():
         lines.append(f"| {case.inputs[key]['label']} | {_fmt(key, s['pessimistic'])} | "
                      f"{_fmt(key, float(case.inputs[key]['value']))} | {_fmt(key, s['optimistic'])} | {s['why']} |")
-    lines += ["", "## 5. Counting rules applied", ""] + [f"- {r}" for r in RULES] + [""]
+    lines += _downside_markdown(case, results)
+    lines += ["", "## 6. Counting rules applied", ""] + [f"- {r}" for r in RULES] + [""]
     return "\n".join(lines)
+
+
+def _downside_markdown(case: CaseInputs, results: dict[str, dict]) -> list[str]:
+    """Section 5 of the summary: the downside rule applied to this case."""
+    d = downside(case, results)
+    lines = ["", "## 5. Downside and review gate", ""]
+    if not d["negative_scenarios"]:
+        return lines + [
+            f"The 3-year NPV is positive in every scenario (pessimistic: {_eur(d['pessimistic_npv'])}). "
+            "The downside rule does not add a review gate; the standard value review applies.",
+        ]
+    lines += [
+        f"**The 3-year NPV is negative in the {', '.join(d['negative_scenarios'])} scenario"
+        f"{'s' if len(d['negative_scenarios']) > 1 else ''}. Pessimistic NPV: "
+        f"{_eur(d['pessimistic_npv'])}.**",
+        "",
+    ]
+    if "base" in d["negative_scenarios"]:
+        lines += ["The base case itself is negative, so a review gate cannot make the case approvable: "
+                  "rework the case (scope, cost, adoption) or reject it. For information, the effect of each "
+                  "scenario input:", ""]
+    else:
+        lines += [
+        f"Rule: the case can only be approved with conditions. A review gate takes place "
+        f"{REVIEW_GATE_MONTHS} months after go-live (or after the pilot start). If a trigger input is "
+        "at its pessimistic value or worse, the case is stopped or reworked; it continues only if the "
+        "business case, re-run on the measured values, has a positive NPV.",
+        "",
+        ]
+    lines += [
+        "| Input | Base | Pessimistic | NPV if only this input is pessimistic | Stop/rework trigger |",
+        "|---|---|---|---|---|",
+    ]
+    for row in d["drivers"]:
+        lines.append(
+            f"| {row['label']} | {_fmt(row['input'], row['base'])} | {_fmt(row['input'], row['pessimistic'])} "
+            f"| {_eur(row['npv_if_only_this'])} | {trigger_text(row) if row['trigger'] else 'no (monitored)'} |")
+    labels = "; ".join(r["label"] for r in d["drivers"] if r["trigger"])
+    lines += [
+        "",
+        f"NPV if only the trigger inputs ({labels}) are at their pessimistic values: "
+        f"{_eur(d['npv_at_triggers'])}. NPV with all three scenario inputs at pessimistic: "
+        f"{_eur(d['pessimistic_npv'])}.",
+    ]
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -601,6 +738,12 @@ def main(argv: list[str] | None = None) -> int:
         payback = "not within 36" if r["payback_month"] is None else f"{r['payback_month']} months"
         print(f"{sc:>11}: annual benefit {_eur(r['annual_benefit_steady'])}, payback {payback}, "
               f"NPV {_eur(r['npv_3y'])}, ROI {r['roi_3y']:.0%}")
+    d = downside(case, results)
+    if results["base"]["npv_3y"] < 0:
+        print("Base case NPV is negative: do not approve as is; rework the case or reject it.")
+    elif d["negative_scenarios"]:
+        print(f"Negative NPV in: {', '.join(d['negative_scenarios'])}. Approve only with conditions: "
+              f"review gate {REVIEW_GATE_MONTHS} months after go-live (see the summary, section 5).")
     if args.xlsx:
         build_workbook(case, args.xlsx)
         print(f"Wrote {args.xlsx}")

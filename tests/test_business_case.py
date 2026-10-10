@@ -303,3 +303,52 @@ def test_cli_writes_xlsx_and_md(tmp_path, capsys):
     assert bc.main([str(TEMPLATE_INPUTS), "--xlsx", str(xlsx), "--md", str(md)]) == 0
     assert xlsx.is_file() and md.is_file()
     assert "base: annual benefit €96,000, payback 11 months" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# Downside rule and review gate
+# ---------------------------------------------------------------------------
+
+
+def test_downside_of_template_case(case):
+    d = bc.downside(case)
+    assert d["negative_scenarios"] == ["pessimistic"]
+    assert d["pessimistic_npv"] == pytest.approx(bc.compute_all(case)["pessimistic"]["npv_3y"])
+    assert d["trigger_inputs"] == ("minutes_after", "adoption_steady")    # time saved and adoption
+    rows = {r["input"]: r for r in d["drivers"]}
+    assert rows["minutes_after"]["higher_is_worse"] and not rows["adoption_steady"]["higher_is_worse"]
+    assert rows["minutes_after"]["time_saved_pessimistic"] == 3
+    assert not rows["share_hours_redeployed"]["trigger"]
+    only_adoption = bc.compute(dict(case.values(), adoption_steady=0.6))["npv_3y"]
+    assert rows["adoption_steady"]["npv_if_only_this"] == pytest.approx(only_adoption)
+
+
+def test_trigger_text(case):
+    rows = {r["input"]: r for r in bc.downside(case)["drivers"]}
+    assert bc.trigger_text(rows["adoption_steady"]) == "at or below 60%"
+    assert bc.trigger_text(rows["minutes_after"]) == (
+        "time saved at or below 3 minutes per transaction (handling time at or above 3 minutes)")
+
+
+def test_review_gate_drivers_can_be_set_in_the_inputs(tmp_path, raw):
+    raw["review_gate_drivers"] = ["share_hours_redeployed"]
+    case = bc.load_inputs(write(tmp_path, raw))
+    assert bc.downside(case)["trigger_inputs"] == ("share_hours_redeployed",)
+    raw["review_gate_drivers"] = ["discount_rate"]
+    with pytest.raises(InputError, match="must be scenario inputs"):
+        bc.load_inputs(write(tmp_path, raw))
+
+
+def test_markdown_shows_downside_section(case):
+    md = bc.render_markdown(case)
+    assert "## 5. Downside and review gate" in md
+    assert "Pessimistic NPV: -€24,628." in md
+    assert "review gate takes place 3 months after go-live" in md
+
+
+def test_markdown_without_negative_scenario(tmp_path, raw):
+    raw["scenarios"]["share_hours_redeployed"]["pessimistic"] = 0.5
+    raw["scenarios"]["adoption_steady"]["pessimistic"] = 0.8
+    raw["scenarios"]["minutes_after"]["pessimistic"] = 2
+    md = bc.render_markdown(bc.load_inputs(write(tmp_path, raw)))
+    assert "positive in every scenario" in md

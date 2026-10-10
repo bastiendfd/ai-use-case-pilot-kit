@@ -34,6 +34,13 @@ and holds the fictional UC-01 example.
    inputs stay at their base value.
 6. **Every input has a source or reasoning and a confidence level** (low,
    medium, high) in the assumptions log.
+7. **A negative scenario is a decision input, not a footnote.** If the 3-year
+   NPV is negative in any scenario, the case cannot get a plain *go*. It can
+   only be approved with conditions (*go with conditions* or *pilot*): a
+   review gate 3 months after go-live or pilot start, and stop or rework if
+   adoption or time saved fall to their pessimistic values. The pessimistic
+   NPV is shown in the decision record. If the base case itself is negative,
+   no gate can make the case approvable.
 
 ---
 
@@ -91,6 +98,19 @@ result.
 | `<input 1>` | | | | |
 | `<input 2>` | | | | |
 | `<input 3>` | | | | |
+
+## 5. Downside and review gate
+
+| Input | Base | Pessimistic | NPV if only this input is pessimistic | Stop/rework trigger |
+|---|---|---|---|---|
+| `<time saved: handling time with the solution>` | | | | `<yes>` |
+| `<adoption after the ramp-up>` | | | | `<yes>` |
+| `<third scenario input>` | | | | `<monitored>` |
+
+State the pessimistic NPV, and the NPV when only the trigger inputs are at
+their pessimistic values. The generated summaries fill this section in
+automatically; the trigger inputs default to time saved and adoption and can be
+changed with `review_gate_drivers` in the inputs file.
 
 ---
 
