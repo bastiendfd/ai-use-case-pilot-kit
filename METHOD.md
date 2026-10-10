@@ -200,9 +200,18 @@ back, and which assumptions the answer depends on.
 - Finance/controlling: checks the benefit logic and the rates.
 - Sponsor: takes the decision.
 
-**Decision at the end:** *go* (build and deploy), *pilot* (time-boxed, limited
-scope, with success and stop criteria), *park* or *reject*. The decision, its
-conditions and its review date go into the decision record.
+**Decision at the end:** *go* (build and deploy), *go with conditions*,
+*pilot* (time-boxed, limited scope, with success and stop criteria), *park* or
+*reject*. The decision, its conditions and its review date go into the
+decision record.
+
+**Downside rule.** If the 3-year NPV is negative in any scenario, a plain *go*
+is not allowed. The case is approved only with conditions (*go with
+conditions* or *pilot*): a review gate 3 months after go-live or pilot start,
+and stop or rework if adoption or time saved fall to their pessimistic values.
+The decision record shows the pessimistic NPV. If the base case is negative,
+the case is reworked, parked or rejected. `python -m scoring.build_examples`
+applies this rule to every example and refuses a record that breaks it.
 
 **Typical failure modes**
 
@@ -213,6 +222,7 @@ conditions and its review date go into the decision record.
 | Run cost forgotten | Only the build cost is counted. | Include hosting, licences that scale with users, monitoring, retraining and support. |
 | 100% adoption from day one | The benefit starts in full at go-live. | Use an adoption curve (for example 50% in months 1–3, 80% after). |
 | Optimistic base case | The base case already assumes everything goes well. | Change only the three most uncertain inputs across scenarios, and decide on the pessimistic case too. |
+| Pessimistic case ignored | A negative pessimistic NPV is noted, then forgotten. | Downside rule: approval only with a 3-month review gate and stop/rework triggers at the pessimistic values. |
 
 ---
 
