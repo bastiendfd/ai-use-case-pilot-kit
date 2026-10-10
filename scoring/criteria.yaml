@@ -1,0 +1,144 @@
+# Prioritisation criteria for AI use cases.
+#
+# How the score works
+# -------------------
+# Each use case is scored from 1 to 5 on six criteria. The weighted score out
+# of 100 is:
+#
+#     weighted_score = sum over criteria of  weight x score / 5
+#
+# So a criterion contributes its full weight when it scores 5, and one fifth of
+# its weight when it scores 1. A case scoring 5 everywhere gets 100; a case
+# scoring 1 everywhere gets 20. Weights must sum to 100.
+#
+# Example: scores (value 5, feasibility 4, data 3, AI maturity 2, risk 1,
+# fit 5) give 30x5/5 + 20x4/5 + 20x3/5 + 10x2/5 + 10x1/5 + 10x5/5
+#        = 30 + 16 + 12 + 4 + 2 + 10 = 74.0
+#
+# How to score
+# ------------
+# - Pick the level whose description fits best. If a case sits between two
+#   levels, take the lower one and write down why.
+# - Record a one-line reason for every score (see the decision record).
+# - Score in a group (process owner, data owner, IT). The submitter alone
+#   should not score their own idea.
+# - Risk is inverted: 5 means low risk, 1 means high risk, so a higher score is
+#   always better.
+#
+# Hard gates (reject / park) are applied before scoring; see scoring/score.py
+# and METHOD.md, step 2.
+#
+# All thresholds are a starting point. Adjust them to the size of your
+# organisation and agree them with the sponsor before scoring.
+
+version: 1
+
+scale:
+  min: 1
+  max: 5
+
+# Assumption used to convert hours into FTE in the business value levels.
+# Fictional round figure; replace it with your organisation's value.
+fte_hours_per_year: 1600
+
+criteria:
+  - id: business_value
+    name: Business value
+    weight: 30
+    question: How large is the measurable benefit per year?
+    why_this_weight: >
+      Value is the reason to do the case at all, so it carries the largest
+      weight. It is capped at 30 so that a large but infeasible idea cannot
+      win on value alone.
+    levels:
+      1: Less than 0.1 FTE or less than EUR 10k per year, and no safety or compliance gain.
+      2: 0.1 to 0.5 FTE or EUR 10k to 50k per year.
+      3: 0.5 to 1 FTE or EUR 50k to 100k per year.
+      4: 1 to 2 FTE or EUR 100k to 250k per year.
+      5: More than 2 FTE or more than EUR 250k per year, or a material safety or compliance gain.
+
+  - id: feasibility
+    name: Feasibility
+    weight: 20
+    question: How hard is it to build, integrate and run with the skills we have?
+    why_this_weight: >
+      Most AI pilots that fail do so on integration and skills, not on the
+      model. Feasibility is the second driver of whether value is realised.
+    levels:
+      1: New technology, heavy integration with several core systems, no internal skills.
+      2: Emerging technique, several integrations, skills must be hired or bought in.
+      3: Known technique but a custom build, one main integration, skills partly available.
+      4: Proven technique, configurable product, standard interface, skills available with vendor support.
+      5: Proven technique, off-the-shelf tool, simple or no integration, skills in-house.
+
+  - id: data_maturity
+    name: Data maturity
+    weight: 20
+    question: Is the data needed available, owned, clean and long enough?
+    why_this_weight: >
+      Without usable data there is no AI solution. Weighted equal to
+      feasibility because data clean-up is often the longest task.
+    levels:
+      1: The data does not exist or is unusable.
+      2: The data exists but is scattered or manual, has major quality issues, or has too little history.
+      3: The data exists and is accessible with effort; known quality issues need a clean-up first.
+      4: The data is accessible and owned, with minor quality issues and enough history.
+      5: The data is clean, accessible, owned, has enough history and is already used in reporting.
+
+  - id: ai_maturity
+    name: AI maturity / proof
+    weight: 10
+    question: How proven is this kind of AI solution in industry?
+    why_this_weight: >
+      Proven solutions lower delivery risk, but part of this is already
+      captured in feasibility, so the weight is kept low.
+    levels:
+      1: Research topic, no reference case.
+      2: Published pilots only, no production references in comparable industries.
+      3: Production references in other industries, few in ours.
+      4: Several production references in comparable industries.
+      5: Widely deployed in industry, available as a standard product.
+
+  - id: risk
+    name: Risk (inverted)
+    weight: 10
+    question: How serious are the regulatory, safety and error risks? (5 = low risk)
+    why_this_weight: >
+      Serious regulatory risk is handled by the hard gates and by the AI Act
+      triage. This criterion separates the remaining cases, so its weight is
+      moderate.
+    levels:
+      1: High-risk under the EU AI Act, or a safety-critical impact.
+      2: Supports decisions about people, or errors are costly and hard to detect.
+      3: Transparency obligations apply, or errors have a moderate impact and are caught by downstream controls.
+      4: Minimal risk; a human reviews the output; errors have a low impact.
+      5: Minimal risk; a human is always in the loop; errors are easy to detect and reverse; no personal data.
+
+  - id: strategic_fit
+    name: Strategic fit
+    weight: 10
+    question: How directly does the case support a stated company priority?
+    why_this_weight: >
+      Fit matters for sponsorship and funding, but it must not double-count
+      the size of the benefit, which business value already measures.
+    levels:
+      1: No link to company priorities.
+      2: Indirect link to a functional goal.
+      3: Supports a stated objective of the business function.
+      4: Supports a stated company objective.
+      5: Directly supports a stated strategic goal with a named KPI.
+
+# Value-vs-feasibility matrix.
+# y axis: business value score.
+# x axis: mean of the listed criteria (doing the case needs both a buildable
+#         solution and usable data).
+# A score is "high" when it is at or above the threshold.
+matrix:
+  value_axis: [business_value]
+  feasibility_axis: [feasibility, data_maturity]
+  threshold: 3.5
+  quadrants:
+    high_value_high_feasibility: quick win
+    high_value_low_feasibility: strategic bet
+    low_value_high_feasibility: fill-in
+    low_value_low_feasibility: avoid
