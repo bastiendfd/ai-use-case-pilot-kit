@@ -59,3 +59,17 @@ gate_metrics:
 
 review:
   what: "Measured time saved, processable share of notes, field accuracy, claims backlog, incidents."
+
+# Review gate held (fictional).
+gate_reviews:
+  - date: 2027-04-11
+    measured:
+      minutes_after: 2.4             # time study on 50 notes: 3.6 minutes saved
+      adoption_steady: 0.78          # share of notes the tool could pre-fill in month 3
+      share_hours_redeployed: 0.5    # monitored, not a trigger
+    decision: continue
+    summary: >-
+      No trigger reached. Checking takes longer than planned (2.4 instead of 2
+      minutes) because clerks re-read low-confidence fields, but time saved and
+      the processable share are both well above their thresholds. The case
+      moves to the standard value review.

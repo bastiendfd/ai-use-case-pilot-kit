@@ -62,3 +62,46 @@ gate_metrics:
 
 review:
   what: "Measured accuracy, time saved and coverage; decision to roll out, rework or stop."
+
+# Review gates held (fictional). Measured values are compared with the stop or
+# rework thresholds; the business case is re-run on them by the generator.
+gate_reviews:
+  - date: 2027-03-01
+    measured:
+      error_rate_after: 0.15     # blind audit of 300 pilot work orders
+      minutes_after: 0.8         # median, work-order screen log, month 3
+      adoption_steady: 0.45      # coverage above the confidence threshold
+    decision: rework
+    summary: >-
+      Two triggers reached. The model mislabels short entries written in
+      technician shorthand, and it returns a confident code for only 45% of
+      pilot work orders, because the training labels still contained retired
+      codes. Time saved is above its threshold: planners are faster when a
+      suggestion is shown. Continuing unchanged would give a negative NPV, so
+      the sponsor chose a time-boxed rework instead of a stop.
+    actions:
+      - action: "Relabel 2,000 work orders with the cleaned code list and retrain."
+        owner: "Maintenance Data Manager (fictional)"
+        due: 2027-04-15
+      - action: "Add an abbreviation dictionary built with senior technicians."
+        owner: "Head of Reliability Engineering (fictional)"
+        due: 2027-04-15
+      - action: "Lower the scope to the 150 codes that cover 90% of pilot work orders."
+        owner: "Head of Maintenance Planning (fictional)"
+        due: 2027-04-30
+    rework_plan:
+      error_rate_after: 0.10
+      adoption_steady: 0.65
+    rework_cost_eur: 18000       # 30 days x EUR 600
+    next_gate: 2027-06-01
+  - date: 2027-06-01
+    measured:
+      error_rate_after: 0.11
+      minutes_after: 0.7
+      adoption_steady: 0.62
+    decision: continue
+    summary: >-
+      No trigger reached after the rework. Accuracy and coverage are better but
+      still below the original plan (8% error rate, 80% coverage). The re-run
+      NPV is positive, so the roll-out to all aircraft types continues; the
+      value tracking keeps the original plan to make the gap visible.
