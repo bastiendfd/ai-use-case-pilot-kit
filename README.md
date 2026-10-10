@@ -1,5 +1,10 @@
 # AI Use-Case Pilot Kit
 
+![Portfolio overview: six fictional AI use cases ranked by weighted score, with the decision, AI Act screening category, 3-year NPV range and review-gate outcomes of each](outputs/portfolio_overview.png)
+
+*The kit in one picture: six fictional use cases, scored, screened against the
+EU AI Act, costed, and decided. Rebuilt by `python -m scoring.build_examples`.*
+
 A method, templates and scripts to identify, triage, prioritise, build the
 business case for, and track the value of AI use cases in a regulated
 industry.
