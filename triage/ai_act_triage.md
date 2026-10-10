@@ -1,5 +1,7 @@
 # EU AI Act triage
 
+> **Dates:** all application dates in this file reflect the amendments made by Regulation (EU) 2026/1744 (Digital Omnibus on AI), in force since 27 July 2026.
+
 A plain-English screening guide for AI use cases in an industrial company. It
 gives each case a first risk category, which feeds the hard gates in
 `scoring/score.py` and the risk criterion in `scoring/criteria.yaml`.
@@ -12,7 +14,8 @@ gives each case a first risk category, which feeds the hard gates in
 by Regulation (EU) 2026/1744 (the "Digital Omnibus on AI") [R2], which entered
 into force on 27 July 2026. Article numbers refer to the AI Act as amended.
 Text checked on EUR-Lex on 10 October 2026. Points that could not be verified
-are marked **TO VERIFY**.
+are marked **TO VERIFY** and listed under
+[Open questions in the README](../README.md#open-questions).
 
 The machine-readable version of the questions is
 [`triage_checklist.yaml`](triage_checklist.yaml); `python -m scoring.triage`
@@ -94,7 +97,7 @@ the market or put into service (Article 2(6) and 2(8)); testing in real-world
 conditions is not covered by that exclusion (Article 2(8)) [R1]. "Putting into
 service" includes supply "for own use" (Article 3(11)) [R1]. A pilot that
 handles live operational work is therefore likely to be in scope.
-**TO VERIFY** with legal for each pilot design.
+**TO VERIFY** with legal for each pilot design (open question 1).
 
 ### Step 3: Prohibited practices
 
@@ -119,7 +122,7 @@ come up: for example, a camera system that reads employees' emotions or
 stress levels on the shop floor. The "safety reasons" exception (for example,
 fatigue detection for operators of dangerous machinery) is narrow.
 **TO VERIFY** with legal for any such case, using the Commission guidelines
-on prohibited practices [C4].
+on prohibited practices [C4] (open question 2).
 
 **Gate:** prohibited → **reject**, whatever the score.
 
@@ -166,9 +169,9 @@ to control them remotely, are concerned" [R1]. What this means in practice:
   the EASA framework. The AI Act requirements arrive through future EASA
   delegated or implementing acts, not through an AI Act conformity assessment
   run by the company.
-- **TO VERIFY:** how far the wording of point 20 reaches for manned aircraft
-  products and parts, and which EASA acts will carry the requirements, and
-  when.
+- **TO VERIFY** (open question 3): how far the wording of point 20 reaches
+  for manned aircraft products and parts, and which EASA acts will carry the
+  requirements, and when.
 - Business-support tools in an aerospace company (document capture,
   reporting, demand forecasting) are not safety components (Article 6(1a))
   [R2].
@@ -180,7 +183,7 @@ to control them remotely, are concerned" [R1]. What this means in practice:
 The Commission published **draft** guidelines on high-risk classification on
 19 May 2026, with practical examples for Annex I and Annex III [C5]. Summaries
 by law firms report that the draft reads the third-party conformity assessment
-condition broadly. **TO VERIFY:** whether the guidelines have been finalised,
+condition broadly. **TO VERIFY** (open question 4): whether the guidelines have been finalised,
 and their final position on that condition.
 
 #### 4b. Article 6(2) and Annex III: listed use cases
@@ -271,7 +274,7 @@ and is capable of competently performing a wide range of distinct tasks"
 - **Change of purpose.** If the company uses a general-purpose system for a
   high-risk purpose, for example asking an LLM to rank job applicants, it
   becomes the provider of a high-risk AI system (Article 25(1)(c)) [R1].
-- **TO VERIFY:** at what point fine-tuning or modifying a model makes the
+- **TO VERIFY** (open question 5): at what point fine-tuning or modifying a model makes the
   company a provider of a general-purpose AI model. Check the Commission's
   guidance for general-purpose AI providers.
 
@@ -345,20 +348,10 @@ compliance status. It can feed two widely used frameworks:
 
 ---
 
-## 6. TO VERIFY items
+## 6. Open questions
 
-1. Whether a pilot that handles live operational work counts as "putting into
-   service" for a given pilot design (step 2).
-2. The scope of the "safety reasons" exception for emotion recognition in the
-   workplace, Article 5(1)(f) (step 3).
-3. How far Annex I, Section B, point 20 (Regulation (EU) 2018/1139) reaches
-   for manned aircraft products and parts, and which EASA acts will carry the
-   AI Act requirements, and when (step 4a).
-4. Whether the Commission's high-risk classification guidelines (draft of 19
-   May 2026) have been finalised, and their final reading of the third-party
-   conformity assessment condition (step 4a).
-5. When fine-tuning or modifying a general-purpose model makes a company a
-   provider of a general-purpose AI model (step 7).
+The points marked **TO VERIFY** above are tracked, with the date they were
+last checked, in the [Open questions section of the README](../README.md#open-questions).
 
 ---
 
