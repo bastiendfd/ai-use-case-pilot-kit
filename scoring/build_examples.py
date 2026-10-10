@@ -18,7 +18,9 @@ For each use case in examples/use_cases.csv, the folder that holds its
 
 The portfolio outputs (outputs/ranking.*, outputs/value_feasibility_matrix.png,
 outputs/sensitivity.md) come from scoring/score.py; outputs/decisions.csv
-lists the decision of every case.
+lists the decision and review-gate outcomes of every case; the charts
+(outputs/portfolio_overview.png, cumulative_value.png, adoption.png) come
+from dashboard/charts.py. This one command rebuilds everything.
 """
 
 from __future__ import annotations
@@ -38,9 +40,9 @@ from scoring.triage import load_checklist, to_markdown, triage_file
 EXAMPLES_DIR = score.REPO_ROOT / "examples"
 USE_CASES_CSV = EXAMPLES_DIR / "use_cases.csv"
 HAND_WRITTEN = ("intake.md", "triage.yaml", "business_case_inputs.yaml", "decision.yaml")
-DECISIONS_COLUMNS = ("id", "title", "decision", "ai_act_category", "gate_result", "rank", "weighted_score",
+DECISIONS_COLUMNS = ("id", "title", "short_title", "decision", "ai_act_category", "gate_result", "rank", "weighted_score",
                      "quadrant", "npv_pessimistic_eur", "npv_base_eur", "npv_optimistic_eur",
-                     "negative_scenario", "review_gate_date", "review_date")
+                     "negative_scenario", "review_gate_date", "review_date", "gate_outcomes")
 
 
 def _with_fiction_note(markdown: str) -> str:
@@ -85,11 +87,13 @@ def generate(csv_path: Path = USE_CASES_CSV) -> tuple[dict[Path, str], list[dict
             errors += exc.errors
             continue
         d = bc.downside(case, results)
+        evaluated = dec.evaluate_gate_reviews(decision, case, d)
         gate_day = dec.gate_date(decision) if dec.gate_applies(decision, d) else None
         review_date = gate_day or decision["review"].get("date") or ""
         table.append({
             "id": row["id"],
             "title": row["title"],
+            "short_title": row.get("short_title", ""),
             "decision": decision["decision"],
             "ai_act_category": tri.category,
             "gate_result": ranked_row["gate_result"],
@@ -102,6 +106,7 @@ def generate(csv_path: Path = USE_CASES_CSV) -> tuple[dict[Path, str], list[dict
             "negative_scenario": "yes" if d["negative_scenarios"] else "no",
             "review_gate_date": gate_day.isoformat() if gate_day else "",
             "review_date": str(review_date),
+            "gate_outcomes": dec.gate_status(decision, evaluated),
         })
     if errors:
         raise InputError(errors)
@@ -145,7 +150,12 @@ def main(argv: list[str] | None = None) -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8", newline="\n")
     print(f"Wrote {len(files)} generated files.")
-    return score.main([str(USE_CASES_CSV), "--sensitivity", "--output-dir", str(args.output_dir)])
+    code = score.main([str(USE_CASES_CSV), "--sensitivity", "--output-dir", str(args.output_dir),
+                       "--decisions", str(args.output_dir / "decisions.csv")])
+    if code:
+        return code
+    from dashboard import charts
+    return charts.main(["--output-dir", str(args.output_dir)])
 
 
 if __name__ == "__main__":

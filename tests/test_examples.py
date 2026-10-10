@@ -107,3 +107,17 @@ def test_ranking_outputs_exist_and_match_the_scores(table):
 
 def test_check_mode_passes_on_committed_files():
     assert be.main(["--check"]) == 0
+
+
+def test_uc03_record_shows_the_gate_firing_and_the_rework():
+    record = (folder("UC-03") / "decision_record.md").read_text(encoding="utf-8")
+    assert "| Review gate outcomes | rework (2027-03-01), continue (2027-06-01); see section 9 |" in record
+    assert "### Gate 1: 2027-03-01. Decision: **Rework**" in record
+    assert "| at or above 14.0% | 15% | **yes** |" in record
+    assert "### Gate 2: 2027-06-01. Decision: **Continue**" in record
+
+
+def test_gate_outcomes_in_decisions_table(table):
+    assert table["UC-03"]["gate_outcomes"] == "rework (2027-03-01), continue (2027-06-01)"
+    assert table["UC-01"]["gate_outcomes"] == "continue (2027-04-11)"
+    assert all(table[uc]["gate_outcomes"] == "" for uc in ("UC-02", "UC-04", "UC-05", "UC-06"))
