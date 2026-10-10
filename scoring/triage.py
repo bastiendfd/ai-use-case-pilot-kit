@@ -384,7 +384,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     text = to_markdown(result) if args.format == "markdown" else to_text(result)
     if args.output:
-        args.output.write_text(text, encoding="utf-8")
+        args.output.write_text(text, encoding="utf-8", newline="\n")
         print(f"Wrote {args.output}")
     else:
         print(text)

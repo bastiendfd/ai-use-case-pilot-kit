@@ -749,7 +749,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Wrote {args.xlsx}")
     if args.md:
         args.md.parent.mkdir(parents=True, exist_ok=True)
-        args.md.write_text(render_markdown(case, results), encoding="utf-8")
+        args.md.write_text(render_markdown(case, results), encoding="utf-8", newline="\n")
         print(f"Wrote {args.md}")
     return 0
 

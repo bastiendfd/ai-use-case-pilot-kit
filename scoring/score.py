@@ -511,7 +511,7 @@ def write_ranking(ranked: pd.DataFrame, criteria: Criteria, weights: dict[str, f
     output_dir.mkdir(parents=True, exist_ok=True)
     csv_path = output_dir / "ranking.csv"
     md_path = output_dir / "ranking.md"
-    ranked.to_csv(csv_path, index=False, encoding="utf-8")
+    ranked.to_csv(csv_path, index=False, encoding="utf-8", lineterminator="\n")
 
     display = ranked.copy()
     display["rank"] = display["rank"].astype(object).where(display["rank"].notna(), "–")
@@ -544,7 +544,7 @@ def write_ranking(ranked: pd.DataFrame, criteria: Criteria, weights: dict[str, f
     ]
     if warnings:
         lines += ["## Input warnings", ""] + [f"- {w}" for w in warnings] + [""]
-    md_path.write_text("\n".join(lines), encoding="utf-8")
+    md_path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     return csv_path, md_path
 
 
@@ -719,7 +719,7 @@ def write_sensitivity(result: pd.DataFrame, output_dir: Path, step: float = SENS
         _md_table(table),
         "",
     ]
-    path.write_text("\n".join(lines), encoding="utf-8")
+    path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     return path
 
 
