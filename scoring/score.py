@@ -28,11 +28,13 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from scoring.errors import InputError
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CRITERIA = Path(__file__).resolve().parent / "criteria.yaml"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "outputs"
 
-AI_ACT_CATEGORIES = ("not_ai_system", "minimal", "limited", "high", "prohibited")
+AI_ACT_CATEGORIES = ("not_ai_system", "excluded", "minimal", "limited", "high", "prohibited")
 YES_NO = ("yes", "no")
 MISSING_OWNER_VALUES = {"", "none", "tbd", "n/a", "na", "unknown", "-"}
 
@@ -44,6 +46,9 @@ GATE_FIELDS = (
     "approved_environment_available",
 )
 IDENTITY_FIELDS = ("id", "title")
+# Optional column: path to a triage answers file, relative to the CSV file.
+# When set, the AI Act category is computed by scoring/triage.py.
+TRIAGE_FIELD = "triage_answers"
 
 GATE_PASS = "pass"
 GATE_PARK = "park"
@@ -51,17 +56,6 @@ GATE_REJECT = "reject"
 
 SENSITIVITY_STEP = 10.0
 TOP_N = 3
-
-
-class InputError(ValueError):
-    """Raised when the criteria or the use-case file is invalid.
-
-    ``errors`` holds one human-readable message per problem found.
-    """
-
-    def __init__(self, errors: list[str]):
-        self.errors = errors
-        super().__init__("\n".join(errors))
 
 
 @dataclass(frozen=True)
@@ -184,12 +178,52 @@ def load_use_cases(path: Path, criteria: Criteria) -> pd.DataFrame:
     except pd.errors.EmptyDataError:
         raise InputError([f"{path}: the file is empty."]) from None
     df.columns = [str(c).strip() for c in df.columns]
-    return validate_use_cases(df, criteria, source=str(path))
+    return validate_use_cases(df, criteria, source=str(path), base_dir=path.parent)
 
 
-def validate_use_cases(df: pd.DataFrame, criteria: Criteria, source: str = "input") -> pd.DataFrame:
+def apply_triage(df: pd.DataFrame, base_dir: Path, source: str) -> pd.DataFrame:
+    """Fill or check ai_act_category from the triage answers files.
+
+    For each row with a ``triage_answers`` path, run scoring/triage.py. An
+    empty ai_act_category is filled with the result; a non-empty one must
+    match it.
+    """
+    from scoring.triage import load_checklist, triage_file
+
+    df = df.copy()
+    if "ai_act_category" not in df.columns:
+        df["ai_act_category"] = ""
+    checklist = None
+    errors = []
+    for idx, row in df.iterrows():
+        rel = str(row[TRIAGE_FIELD]).strip()
+        if not rel:
+            continue
+        checklist = checklist or load_checklist()
+        label = f"{row.get('id') or 'line ' + str(idx + 2)} (line {idx + 2})"
+        try:
+            result = triage_file(Path(base_dir) / rel, checklist)
+        except InputError as exc:
+            errors += [f"{label}: {m}" for m in exc.errors]
+            continue
+        given = str(row["ai_act_category"]).strip().lower()
+        if given and given != result.category:
+            errors.append(
+                f"{label}: ai_act_category is '{given}' but the triage of {rel} "
+                f"gives '{result.category}'. Fix the answers or the category."
+            )
+        df.at[idx, "ai_act_category"] = result.category
+    if errors:
+        raise InputError(errors)
+    return df
+
+
+def validate_use_cases(df: pd.DataFrame, criteria: Criteria, source: str = "input",
+                       base_dir: Path | None = None) -> pd.DataFrame:
     """Validate a raw (all-text) use-case table. See load_use_cases."""
     required = list(IDENTITY_FIELDS) + list(GATE_FIELDS) + list(criteria.ids)
+    if TRIAGE_FIELD in df.columns:
+        required.remove("ai_act_category")  # filled from the triage answers
     missing_cols = [c for c in required if c not in df.columns]
     if missing_cols:
         raise InputError([f"{source}: missing required column(s): {', '.join(missing_cols)}."])
@@ -199,6 +233,8 @@ def validate_use_cases(df: pd.DataFrame, criteria: Criteria, source: str = "inpu
     df = df.copy()
     for col in df.columns:
         df[col] = df[col].astype(str).str.strip()
+    if TRIAGE_FIELD in df.columns:
+        df = apply_triage(df, base_dir or Path("."), source)
 
     errors: list[str] = []
     # Row numbers are reported as in a spreadsheet: header is line 1.
