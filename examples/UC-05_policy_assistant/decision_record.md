@@ -70,7 +70,7 @@ Because a scenario is negative, the decision carries a review gate on **2027-04-
 
 If all triggers are reached, the NPV falls to -€35,421; if share of saved hours redeployed or avoiding a cost is also at its pessimistic value (the full pessimistic scenario), to -€62,536.
 
-**At the gate:** if no trigger is reached, the case continues to the standard value review. If a trigger is reached, the sponsor decides to **stop**, or to **rework** (named actions, owner, date) and re-run the business case on the measured values. The case continues only if that re-run has a positive NPV, recorded in a new decision record.
+**At the gate:** if no trigger is reached, the case continues to the standard value review. If a trigger is reached, the sponsor decides to **stop**, or to **rework** (named actions, owner, date). A rework is allowed only if the business case, re-run on the measured values with the expected effect and cost of the rework, has a positive NPV; otherwise the case stops. Gate outcomes are recorded in section 9.
 
 Monitored at the gate but not a trigger: Share of saved hours redeployed or avoiding a cost (pessimistic 10%, NPV if only this input is pessimistic -€23,284).
 
@@ -97,3 +97,7 @@ Monitored at the gate but not a trigger: Share of saved hours redeployed or avoi
 | Review date | 2027-04-11 |
 | What will be reviewed | Measured time saved and adoption, answer-quality sample, incidents; decision to roll out, rework or stop. |
 | Reopening trigger (park only) | not applicable |
+
+## 9. Review gate outcomes
+
+No review gate recorded yet (due on 2027-04-11).
