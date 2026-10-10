@@ -5,9 +5,10 @@ use case, including park and reject decisions. Keep it to one page. Copy it to
 `examples/<ID>_<short_name>/decision_record.md`, or write a `decision.yaml`
 and generate the record with `python -m scoring.build_examples` (scores,
 triage and business case figures are then filled in automatically, and the
-downside rule is checked). A new decision on the same use
-case (for example at a value review) gets a new record; do not overwrite the
-old one.
+downside rule is checked). Review-gate outcomes (continue, rework or stop)
+are added to section 9 of the same record. Any other new decision on the same
+use case (for example pilot → go after a value review) gets a new record; do
+not overwrite the old one.
 
 > **Fictional examples only.** Records in `examples/` describe the fictional
 > company "Northwind Aero Services".
@@ -95,8 +96,9 @@ pessimistic NPV**, even when it is positive.
 
 At the gate: if no trigger is reached, the case continues to the standard value
 review. If a trigger is reached, the sponsor decides to **stop**, or to
-**rework** and re-run the business case on the measured values; the case
-continues only if that re-run has a positive NPV, in a new decision record.
+**rework**. A rework is allowed only if the business case, re-run on the
+measured values with the expected effect and cost of the rework actions, has a
+positive NPV; otherwise the case stops. Record the outcome in section 9.
 
 Measure adoption on what the steady value means (for example the share of
 volume the tool can process), not against the ramp-up plan, which is lower by
@@ -126,3 +128,16 @@ include success criteria and stop criteria with numbers.
 | Review date | `<YYYY-MM-DD>` |
 | What will be reviewed | `<e.g. realised vs. planned value, adoption, incidents>` |
 | Reopening trigger (park only) | `<e.g. "data owner assigned", "24 months of demand history available">` |
+
+## 9. Review gate outcomes
+
+One block per gate held (only when section 5 sets a review gate).
+
+| Trigger | Stop or rework if | Measured | Reached? |
+|---|---|---|---|
+| `<trigger>` | `<threshold from section 5>` | `<measured value>` | `<yes / no>` |
+
+- 3-year NPV re-run on the measured values: `<€>`.
+- Rework only: re-run with the rework plan and its cost: `<€>` (must be positive).
+- Gate decision: `<continue / rework / stop>`, with the reason.
+- Rework only: actions (action, owner, due date) and the next gate date (within 3 months).

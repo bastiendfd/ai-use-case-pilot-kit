@@ -39,6 +39,14 @@ DECISIONS = {
     "reject": "Reject",
 }
 APPROVING = ("go", "go_with_conditions", "pilot")
+# Colours used for decisions in every chart (colour-blind-safe Okabe-Ito palette).
+DECISION_COLOURS = {
+    "go": "#009E73",
+    "go_with_conditions": "#56B4E9",
+    "pilot": "#0072B2",
+    "park": "#E69F00",
+    "reject": "#D55E00",
+}
 LEVELS = ("L", "M", "H")
 CATEGORY_LABELS = {
     "not_ai_system": "Not an AI system",
@@ -96,6 +104,7 @@ def load_decision(path: Path) -> dict:
         for field in ("likelihood", "impact"):
             if risk.get(field) and str(risk[field]).upper() not in LEVELS:
                 errors.append(f"{path}: risk {i} {field} must be L, M or H.")
+    raw["gate_reviews"] = _load_gate_reviews(raw, str(path), errors)
     if raw.get("decision") == "park" and not (raw.get("review") or {}).get("reopening_trigger"):
         errors.append(f"{path}: a park decision needs review.reopening_trigger.")
     if errors:
@@ -153,6 +162,7 @@ def render_decision_record(decision: dict, ranked_row: dict, n_cases: int, crite
     check_decision(decision, ranked_row, d)
     kind = decision["decision"]
     gated = gate_applies(decision, d)
+    evaluated = evaluate_gate_reviews(decision, case, d)
     rank = ranked_row.get("rank")
     rank_text = "not ranked (stopped at the hard gate)" if rank is None or str(rank) in ("<NA>", "nan") \
         else f"{int(rank)} of {n_cases}"
@@ -174,6 +184,10 @@ def render_decision_record(decision: dict, ranked_row: dict, n_cases: int, crite
         f"| Decision date | {decision['decision_date'].isoformat()} |",
         f"| Decision makers | {'; '.join(decision['decision_makers'])} |",
         f"| Decision stage | {decision['stage']} |",
+    ]
+    if evaluated:
+        lines.append(f"| Review gate outcomes | {gate_status(decision, evaluated)}; see section 9 |")
+    lines += [
         "",
         _cell(decision["summary"]),
         "",
@@ -263,8 +277,10 @@ def render_decision_record(decision: dict, ranked_row: dict, n_cases: int, crite
         f"| Review date | {review_date.isoformat() if isinstance(review_date, dt.date) else review_date or 'not set'} |",
         f"| What will be reviewed | {_cell(review.get('what', ''))} |",
         f"| Reopening trigger (park only) | {_cell(review.get('reopening_trigger', 'not applicable'))} |",
-        "",
     ]
+    if gated:
+        lines += _gate_outcome_section(decision, evaluated, case)
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -313,12 +329,205 @@ def _gate_section(decision: dict, d: dict, gated: bool) -> list[str]:
         combined,
         "",
         "**At the gate:** if no trigger is reached, the case continues to the standard value review. If a "
-        "trigger is reached, the sponsor decides to **stop**, or to **rework** (named actions, owner, date) and "
-        "re-run the business case on the measured values. The case continues only if that re-run has a "
-        "positive NPV, recorded in a new decision record.",
+        "trigger is reached, the sponsor decides to **stop**, or to **rework** (named actions, owner, date). A "
+        "rework is allowed only if the business case, re-run on the measured values with the expected effect "
+        "and cost of the rework, has a positive NPV; otherwise the case stops. Gate outcomes are recorded in "
+        "section 9.",
     ]
     if monitored:
         out += ["", "Monitored at the gate but not a trigger: "
                 + "; ".join(f"{r['label']} (pessimistic {bc._fmt(r['input'], r['pessimistic'])}, NPV if only "
                             f"this input is pessimistic {bc._eur(r['npv_if_only_this'])})" for r in monitored) + "."]
     return out
+
+
+# ---------------------------------------------------------------------------
+# Review gate outcomes
+# ---------------------------------------------------------------------------
+
+GATE_OUTCOMES = {"continue": "Continue", "rework": "Rework", "stop": "Stop"}
+
+
+def _number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _load_gate_reviews(raw: dict, path: str, errors: list[str]) -> list[dict]:
+    """Validate the optional ``gate_reviews`` list of decision.yaml (fields only)."""
+    reviews = raw.get("gate_reviews") or []
+    if not isinstance(reviews, list):
+        errors.append(f"{path}: 'gate_reviews' must be a list.")
+        return []
+    out = []
+    for i, review in enumerate(reviews, start=1):
+        tag = f"{path}: gate review {i}"
+        if not isinstance(review, dict):
+            errors.append(f"{tag} must be a mapping.")
+            continue
+        review = dict(review)
+        review["date"] = _date(review.get("date"), f"gate_reviews[{i}].date", path, errors)
+        if review.get("decision") not in GATE_OUTCOMES:
+            errors.append(f"{tag}: 'decision' must be one of {', '.join(GATE_OUTCOMES)}.")
+        if not review.get("summary"):
+            errors.append(f"{tag}: 'summary' is required.")
+        measured = review.get("measured")
+        if not isinstance(measured, dict) or not measured or not all(_number(v) for v in measured.values()):
+            errors.append(f"{tag}: 'measured' must map each trigger input to a measured number.")
+        if review.get("decision") == "rework":
+            actions = review.get("actions") or []
+            if not actions:
+                errors.append(f"{tag}: a rework needs 'actions' (action, owner, due).")
+            for j, action in enumerate(actions, start=1):
+                for field in ("action", "owner", "due"):
+                    if not (action or {}).get(field):
+                        errors.append(f"{tag}: action {j} needs '{field}'.")
+            if not review.get("next_gate"):
+                errors.append(f"{tag}: a rework needs 'next_gate' (date of the next review gate).")
+            else:
+                review["next_gate"] = _date(review["next_gate"], f"gate_reviews[{i}].next_gate", path, errors)
+            plan = review.get("rework_plan") or {}
+            if not isinstance(plan, dict) or not all(_number(v) for v in plan.values()):
+                errors.append(f"{tag}: 'rework_plan' must map inputs to the values expected after the rework.")
+            review["rework_plan"] = plan if isinstance(plan, dict) else {}
+            cost = review.get("rework_cost_eur", 0)
+            if not _number(cost) or cost < 0:
+                errors.append(f"{tag}: 'rework_cost_eur' must be a number of at least 0.")
+            review["rework_cost_eur"] = cost if _number(cost) else 0
+        out.append(review)
+    return out
+
+
+def evaluate_gate_reviews(decision: dict, case: bc.CaseInputs, d: dict) -> list[dict]:
+    """Evaluate each recorded review gate against the triggers and re-run the business case.
+
+    For each review:
+    - a trigger is *hit* when its measured value is at or beyond the
+      pessimistic value (the same thresholds as in section 5);
+    - ``npv_measured``: the business case re-run with the measured values
+      (and the cost of earlier reworks);
+    - ``npv_rework`` (rework only): the re-run with the measured values, the
+      values expected after the rework actions and the rework cost.
+
+    Rules (raise InputError when broken):
+    - a hit trigger means rework or stop; no hit means continue or stop;
+    - a rework is allowed only if ``npv_rework`` is positive;
+    - the first review is on the gate date; each later review is on the
+      ``next_gate`` date of the previous rework; nothing follows a stop or a
+      continue.
+    The re-runs keep the original 36-month horizon and start date (a
+    simplification: the delay caused by a rework is not modelled).
+    """
+    reviews = decision.get("gate_reviews") or []
+    if not reviews:
+        return []
+    src = decision["source"]
+    errors: list[str] = []
+    if not gate_applies(decision, d):
+        raise InputError([f"{src}: gate_reviews are only allowed when the decision carries a review gate."])
+    base = case.values("base")
+    expected_date = gate_date(decision)
+    extra_cost = 0.0
+    out = []
+    for i, review in enumerate(reviews, start=1):
+        tag = f"{src}: gate review {i}"
+        if review["date"] != expected_date:
+            errors.append(f"{tag}: date is {review['date']}, expected {expected_date} "
+                          f"({'the gate date' if i == 1 else 'the next_gate of the previous rework'}).")
+        measured = {k: float(v) for k, v in review["measured"].items()}
+        unknown = [k for k in measured if k not in case.inputs]
+        missing = [k for k in d["trigger_inputs"] if k not in measured]
+        if unknown:
+            errors.append(f"{tag}: unknown measured input(s): {', '.join(unknown)}.")
+        if missing:
+            errors.append(f"{tag}: measured value missing for trigger(s): {', '.join(missing)}.")
+        if unknown or missing:
+            continue
+        rows = []
+        for r in d["drivers"]:
+            if not r["trigger"]:
+                continue
+            m = measured[r["input"]]
+            hit = m >= r["pessimistic"] if r["higher_is_worse"] else m <= r["pessimistic"]
+            rows.append(dict(r, measured=m, hit=hit))
+        earlier_cost = extra_cost
+        values = dict(base, **measured)
+        values["other_one_off_eur"] += earlier_cost
+        npv_measured = bc.compute(values)["npv_3y"]
+        any_hit = any(r["hit"] for r in rows)
+        kind = review["decision"]
+        npv_rework = None
+        if any_hit and kind == "continue":
+            errors.append(f"{tag}: a trigger is reached, so the gate decision must be rework or stop.")
+        if not any_hit and kind == "rework":
+            errors.append(f"{tag}: no trigger is reached, so the gate decision must be continue or stop.")
+        if kind == "rework":
+            plan = {k: float(v) for k, v in review["rework_plan"].items()}
+            bad = [k for k in plan if k not in case.inputs]
+            if bad:
+                errors.append(f"{tag}: unknown rework_plan input(s): {', '.join(bad)}.")
+                continue
+            extra_cost += float(review["rework_cost_eur"])
+            values = {**base, **measured, **plan}
+            values["other_one_off_eur"] += extra_cost
+            npv_rework = bc.compute(values)["npv_3y"]
+            if npv_rework <= 0:
+                errors.append(f"{tag}: the re-run with the rework plan has a negative NPV "
+                              f"({bc._eur(npv_rework)}); the rule leaves only stop.")
+            if review.get("next_gate") and review["next_gate"] > add_months(review["date"], bc.REVIEW_GATE_MONTHS):
+                errors.append(f"{tag}: next_gate must be within {bc.REVIEW_GATE_MONTHS} months of this review.")
+            expected_date = review.get("next_gate")
+        elif i < len(reviews):
+            errors.append(f"{tag}: a '{kind}' closes the gate sequence; no later review is allowed.")
+        out.append(dict(review, rows=rows, any_hit=any_hit, npv_measured=npv_measured,
+                        npv_rework=npv_rework, earlier_cost=earlier_cost))
+    if errors:
+        raise InputError(errors)
+    return out
+
+
+def gate_status(decision: dict, evaluated: list[dict]) -> str:
+    """One-line status after the review gates, e.g. 'rework (2027-03-01), continue (2027-06-01)'."""
+    return ", ".join(f"{r['decision']} ({r['date'].isoformat()})" for r in evaluated)
+
+
+def _measured_text(row: dict) -> str:
+    if "time_saved_base" in row:
+        saved = row["time_saved_base"] + row["base"] - row["measured"]
+        return f"{bc.minutes(saved)} saved (handling time {bc.minutes(row['measured'])})"
+    return bc._fmt(row["input"], row["measured"])
+
+
+def _gate_outcome_section(decision: dict, evaluated: list[dict], case: bc.CaseInputs) -> list[str]:
+    lines = ["", "## 9. Review gate outcomes", ""]
+    if not evaluated:
+        due = gate_date(decision)
+        return lines + [f"No review gate recorded yet (due on {due.isoformat()})." if due
+                        else "No review gate applies."]
+    lines += ["Each gate compares the measured values with the stop or rework thresholds of section 5 and "
+              "re-runs the business case on the measured values (same 36-month horizon and start date; the "
+              "delay caused by a rework is not modelled).", ""]
+    for i, r in enumerate(evaluated, start=1):
+        lines += [
+            f"### Gate {i}: {r['date'].isoformat()}. Decision: **{GATE_OUTCOMES[r['decision']]}**",
+            "",
+            "| Trigger | Stop or rework if | Measured | Reached? |",
+            "|---|---|---|---|",
+        ]
+        for row in r["rows"]:
+            lines.append(f"| {row['label']} | {bc.trigger_text(row)} | {_measured_text(row)} | "
+                         f"{'**yes**' if row['hit'] else 'no'} |")
+        cost_note = (f", including {bc._eur(r['earlier_cost'])} of earlier rework cost"
+                     if r["earlier_cost"] > 0 else "")
+        lines += ["", f"- 3-year NPV re-run on the measured values{cost_note}: **{bc._eur(r['npv_measured'])}**."]
+        if r["decision"] == "rework":
+            plan = ", ".join(f"{case.inputs[k]['label'].lower()} {bc._fmt(k, float(v))}"
+                             for k, v in r["rework_plan"].items())
+            lines.append(f"- Re-run with the rework plan ({plan}) and its cost of "
+                         f"{bc._eur(r['rework_cost_eur'])}: **{bc._eur(r['npv_rework'])}**. Positive, so a rework "
+                         "is allowed; otherwise the rule leaves only stop.")
+        lines += ["", _cell(r["summary"]), ""]
+        if r["decision"] == "rework":
+            lines += ["| Rework action | Owner | Due |", "|---|---|---|"]
+            lines += [f"| {_cell(a['action'])} | {_cell(a['owner'])} | {a['due']} |" for a in r["actions"]]
+            lines += ["", f"Next review gate: **{r['next_gate'].isoformat()}**, same triggers.", ""]
+    return lines
