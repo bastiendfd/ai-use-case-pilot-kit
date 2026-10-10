@@ -213,6 +213,16 @@ The decision record shows the pessimistic NPV. If the base case is negative,
 the case is reworked, parked or rejected. `python -m scoring.build_examples`
 applies this rule to every example and refuses a record that breaks it.
 
+**At the review gate.** Measure each trigger, compare it with its pessimistic
+threshold, and re-run the business case on the measured values. If a trigger
+is reached, the decision is *rework* or *stop*. A rework is allowed only if
+the re-run, with the expected effect and cost of the rework actions, has a
+positive NPV; it gets named actions and a new gate within 3 months. If no
+trigger is reached, the case continues. Gate outcomes are added to section 9
+of the decision record (`gate_reviews` in `decision.yaml`), and the generator
+refuses an outcome that breaks these rules. UC-03 in `examples/` shows a gate
+firing and a rework.
+
 **Typical failure modes**
 
 | Failure mode | How it shows | Countermeasure |
@@ -237,9 +247,13 @@ and decide whether to scale, fix or stop.
 - Monthly actuals: realised benefit, adoption rate, incidents, notes.
 
 **Outputs**
-- Monthly rows in `data/value_tracking.csv`.
-- Charts and a management dashboard (`dashboard/`): cumulative planned vs.
-  realised value, adoption per use case, portfolio overview.
+- Monthly rows in `data/value_tracking.csv`, starting in the go-live (or
+  pilot start) month. Keep the original plan in `planned_benefit_eur`, even
+  after a rework, so the gap stays visible.
+- Charts (`python dashboard/charts.py`, written to `outputs/`): portfolio
+  overview, cumulative planned vs. realised value with the review gates, and
+  adoption against plan. The Power BI design for a management dashboard is in
+  [`dashboard/README.md`](dashboard/README.md).
 - A review decision, recorded in the decision record.
 
 **Who is involved**
