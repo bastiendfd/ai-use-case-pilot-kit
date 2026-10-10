@@ -1,0 +1,236 @@
+# EU AI Act triage checklist (machine-readable).
+#
+# Screening aid only, not legal advice. Final classification needs legal or
+# compliance review. See triage/ai_act_triage.md for the explanations and the
+# sources. Article references are to Regulation (EU) 2024/1689 as amended by
+# Regulation (EU) 2026/1744.
+#
+# How it is used
+# --------------
+# scoring/triage.py reads this file and an answers file per use case
+# (examples/<ID>_<name>/triage.yaml). Answers are yes, no or unknown. Only the
+# questions on the path through the decision tree are needed.
+#
+# Each question belongs to a group. scoring/triage.py applies the groups in
+# this order:
+#   ai_definition -> exclusion -> prohibited -> annex_i -> annex_iii
+#   -> profiling -> derogation -> transparency
+# The "context" group adds notes but never changes the category.
+#
+# "if_unknown" says how an "unknown" answer is treated. It always points to
+# the stricter outcome, and any "unknown" answer requires legal review.
+
+version: 1
+
+categories:
+  not_ai_system: Not an AI system under Article 3(1); the AI Act does not apply.
+  excluded: Used exclusively for military, defence or national security (Article 2(3)); the AI Act does not apply.
+  prohibited: Prohibited AI practice (Article 5).
+  high: High-risk AI system (Article 6(1) and Annex I, or Article 6(2) and Annex III).
+  limited: Transparency obligations apply (Article 50).
+  minimal: No specific obligations beyond AI literacy (Article 4).
+
+questions:
+  # Step 1 ------------------------------------------------------------------
+  - id: is_ai_system
+    group: ai_definition
+    reference: Art. 3(1); Recital 12
+    if_unknown: "yes"
+    text: >
+      Does the system infer from its inputs how to generate outputs such as
+      predictions, content, recommendations or decisions (for example a
+      trained model or an LLM), rather than only executing rules written by
+      people?
+
+  # Step 2 ------------------------------------------------------------------
+  - id: exclusively_military
+    group: exclusion
+    reference: Art. 2(3); Recital 24
+    if_unknown: "no"
+    text: >
+      Is the system placed on the market, put into service or used
+      exclusively for military, defence or national security purposes?
+      Answer "no" for dual-use systems and for civil uses inside a defence
+      company (HR, finance, maintenance planning).
+
+  # Step 3 ------------------------------------------------------------------
+  - id: prohibited_manipulation
+    group: prohibited
+    reference: Art. 5(1)(a)
+    if_unknown: "yes"
+    text: Does it use subliminal, manipulative or deceptive techniques that materially distort people's behaviour and are likely to cause significant harm?
+  - id: prohibited_exploit_vulnerabilities
+    group: prohibited
+    reference: Art. 5(1)(b)
+    if_unknown: "yes"
+    text: Does it exploit vulnerabilities due to age, disability or a specific social or economic situation, in a way likely to cause significant harm?
+  - id: prohibited_intimate_imagery
+    group: prohibited
+    reference: Art. 5(1)(ba), from 2 December 2026
+    if_unknown: "yes"
+    text: Does it generate or manipulate realistic intimate or sexually explicit images, video or audio of an identifiable person without their consent?
+  - id: prohibited_csam
+    group: prohibited
+    reference: Art. 5(1)(bb), from 2 December 2026
+    if_unknown: "yes"
+    text: Does it generate or manipulate child sexual abuse material?
+  - id: prohibited_social_scoring
+    group: prohibited
+    reference: Art. 5(1)(c)
+    if_unknown: "yes"
+    text: Does it score people on their social behaviour or personal characteristics, leading to detrimental or unjustified treatment?
+  - id: prohibited_crime_prediction
+    group: prohibited
+    reference: Art. 5(1)(d)
+    if_unknown: "yes"
+    text: Does it predict the risk that a person commits a criminal offence based solely on profiling or personality traits?
+  - id: prohibited_face_scraping
+    group: prohibited
+    reference: Art. 5(1)(e)
+    if_unknown: "yes"
+    text: Does it build or expand facial recognition databases by untargeted scraping of facial images from the internet or CCTV?
+  - id: prohibited_workplace_emotion
+    group: prohibited
+    reference: Art. 5(1)(f)
+    if_unknown: "yes"
+    text: Does it infer the emotions of people in the workplace or in education, other than for medical or safety reasons?
+  - id: prohibited_biometric_categorisation
+    group: prohibited
+    reference: Art. 5(1)(g)
+    if_unknown: "yes"
+    text: Does it use biometric data to infer race, political opinions, trade union membership, religious or philosophical beliefs, sex life or sexual orientation?
+  - id: prohibited_realtime_rbi
+    group: prohibited
+    reference: Art. 5(1)(h)
+    if_unknown: "yes"
+    text: Is it real-time remote biometric identification in publicly accessible spaces for law enforcement?
+
+  # Step 4a -----------------------------------------------------------------
+  - id: annex_i_safety_component
+    group: annex_i
+    reference: Art. 6(1)(a), 6(1a), 6(1b); Annex I
+    if_unknown: "yes"
+    text: >
+      Is the system a safety component of a product (or itself a product)
+      covered by the EU legislation listed in Annex I (for example machinery,
+      lifts, pressure equipment, medical devices, civil aviation)? Answer "no"
+      if it is solely used for user assistance, performance optimisation,
+      service efficiency, automation, convenience or quality control, and its
+      failure would not endanger health or safety.
+  - id: annex_i_third_party_assessment
+    group: annex_i
+    reference: Art. 6(1)(b)
+    if_unknown: "yes"
+    requires: annex_i_safety_component
+    text: >
+      Must that product undergo a third-party conformity assessment under the
+      Annex I legislation? (The Commission's draft guidelines may read this
+      condition broadly: check with legal.)
+
+  # Step 4b -----------------------------------------------------------------
+  - id: annex_iii_biometrics
+    group: annex_iii
+    reference: Annex III, point 1
+    if_unknown: "yes"
+    text: Is it used for remote biometric identification, biometric categorisation by sensitive attributes, or emotion recognition? (Biometric verification that only confirms a person's claimed identity does not count.)
+  - id: annex_iii_critical_infrastructure
+    group: annex_iii
+    reference: Annex III, point 2
+    if_unknown: "yes"
+    text: Is it a safety component in the management or operation of critical digital infrastructure, road traffic, or the supply of water, gas, heating or electricity?
+  - id: annex_iii_education
+    group: annex_iii
+    reference: Annex III, point 3
+    if_unknown: "yes"
+    text: Does it decide access to, or assess people in, education or vocational training institutions?
+  - id: annex_iii_employment
+    group: annex_iii
+    reference: Annex III, point 4
+    if_unknown: "yes"
+    text: >
+      Is it used for recruitment or selection (job ads targeting, filtering
+      applications, evaluating candidates), or for decisions on terms of work,
+      promotion, termination, task allocation based on behaviour or personal
+      traits, or monitoring and evaluating workers' performance or behaviour?
+  - id: annex_iii_essential_services
+    group: annex_iii
+    reference: Annex III, point 5
+    if_unknown: "yes"
+    text: Does it evaluate eligibility for public benefits, creditworthiness of individuals, life or health insurance risk and pricing, or triage emergency calls?
+  - id: annex_iii_law_enforcement
+    group: annex_iii
+    reference: Annex III, point 6
+    if_unknown: "yes"
+    text: Is it used by or on behalf of law enforcement authorities for one of the purposes listed in Annex III, point 6?
+  - id: annex_iii_migration
+    group: annex_iii
+    reference: Annex III, point 7
+    if_unknown: "yes"
+    text: Is it used by or on behalf of public authorities for migration, asylum or border control purposes listed in Annex III, point 7?
+  - id: annex_iii_justice_democracy
+    group: annex_iii
+    reference: Annex III, point 8
+    if_unknown: "yes"
+    text: Does it assist a judicial authority, or is it intended to influence the outcome of an election or referendum or voting behaviour?
+
+  # Step 4c (asked only when an Annex III question is "yes") ----------------
+  - id: profiling_of_persons
+    group: profiling
+    reference: Art. 6(3), last subparagraph
+    if_unknown: "yes"
+    text: Does the system perform profiling of natural persons (automated evaluation of personal aspects such as performance, reliability or behaviour)?
+  - id: derogation_no_significant_risk
+    group: derogation
+    reference: Art. 6(3), first subparagraph
+    if_unknown: "no"
+    text: Is it true that the system poses no significant risk of harm to health, safety or fundamental rights, including by not materially influencing the outcome of decisions?
+  - id: derogation_narrow_procedural_task
+    group: derogation
+    reference: Art. 6(3)(a)
+    if_unknown: "no"
+    text: Does it only perform a narrow procedural task (for example converting documents into a standard format)?
+  - id: derogation_improves_human_result
+    group: derogation
+    reference: Art. 6(3)(b)
+    if_unknown: "no"
+    text: Does it only improve the result of a previously completed human activity (for example improving the wording of a text a person wrote)?
+  - id: derogation_pattern_detection
+    group: derogation
+    reference: Art. 6(3)(c)
+    if_unknown: "no"
+    text: Does it only detect decision-making patterns or deviations, without replacing or influencing the completed human assessment without proper human review?
+  - id: derogation_preparatory_task
+    group: derogation
+    reference: Art. 6(3)(d)
+    if_unknown: "no"
+    text: Does it only perform a preparatory task to an assessment relevant to an Annex III use case?
+
+  # Step 5 ------------------------------------------------------------------
+  - id: transparency_interacts_with_people
+    group: transparency
+    reference: Art. 50(1)
+    if_unknown: "yes"
+    text: Does it interact directly with people, for example as a chatbot or assistant, in a way that may not be obvious to them?
+  - id: transparency_generates_content
+    group: transparency
+    reference: Art. 50(2)
+    if_unknown: "yes"
+    text: Does it generate synthetic audio, image, video or text content (beyond assistive editing)?
+  - id: transparency_emotion_or_biometric
+    group: transparency
+    reference: Art. 50(3)
+    if_unknown: "yes"
+    text: Is it an emotion recognition or biometric categorisation system that people are exposed to?
+  - id: transparency_deep_fake_or_public_text
+    group: transparency
+    reference: Art. 50(4)
+    if_unknown: "yes"
+    text: Does it produce deep fakes, or AI-generated text published to inform the public on matters of public interest without human editorial control?
+
+  # Context (does not change the category) ------------------------------------
+  - id: uses_gpai_model
+    group: context
+    reference: Art. 3(63); Art. 53; Art. 25(1)(c)
+    if_unknown: "no"
+    optional: true
+    text: Is the system built on a general-purpose AI model (for example an LLM accessed through an API)?
