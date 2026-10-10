@@ -555,12 +555,40 @@ def _display_path(path: Path) -> str:
         return Path(path).name
 
 
-def write_matrix(ranked: pd.DataFrame, criteria: Criteria, output_dir: Path, fictional: bool) -> Path:
-    """Draw the 2x2 value-vs-feasibility matrix as a PNG."""
+def load_decisions(path: Path) -> dict[str, str]:
+    """Read {use-case id: decision} from a CSV with 'id' and 'decision' columns."""
+    from scoring.decision import DECISIONS
+
+    path = Path(path)
+    if not path.is_file():
+        raise InputError([f"Decisions file not found: {path}"])
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    missing = [c for c in ("id", "decision") if c not in df.columns]
+    if missing:
+        raise InputError([f"{path}: missing column(s): {', '.join(missing)}."])
+    bad = sorted(set(df["decision"]) - set(DECISIONS))
+    if bad:
+        raise InputError([f"{path}: unknown decision(s): {', '.join(bad)}. Use: {', '.join(DECISIONS)}."])
+    return dict(zip(df["id"], df["decision"]))
+
+
+def write_matrix(ranked: pd.DataFrame, criteria: Criteria, output_dir: Path, fictional: bool,
+                 decisions: dict[str, str] | None = None) -> Path:
+    """Draw the 2x2 value-vs-feasibility matrix as a PNG.
+
+    Marker fill shows the hard-gate result: filled = passed the gates, hollow =
+    stopped at a hard gate. When ``decisions`` ({id: decision}) is given, the
+    marker colour shows the decision taken after the business case, and the
+    legend says so; without it, all markers are grey and the legend says that
+    no decision is shown.
+    """
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+
+    from scoring.decision import DECISION_COLOURS, DECISIONS
 
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / "value_feasibility_matrix.png"
@@ -595,11 +623,11 @@ def write_matrix(ranked: pd.DataFrame, criteria: Criteria, output_dir: Path, fic
         seen[key] = k + 1
         px, py = key[0] + 0.15 * k, key[1] - 0.15 * k
         passed = row["gate_result"] == GATE_PASS
-        ax.scatter(px, py, s=90, zorder=3,
-                   facecolor="tab:blue" if passed else "white",
-                   edgecolor="tab:blue" if passed else "0.4",
-                   linewidth=1.5)
-        label = row["id"] if passed else f"{row['id']} ({row['gate_result']})"
+        colour = DECISION_COLOURS.get((decisions or {}).get(row["id"]), "0.45")
+        ax.scatter(px, py, s=110, zorder=3,
+                   facecolor=colour if passed else "white",
+                   edgecolor=colour, linewidth=2)
+        label = row["id"] if passed else f"{row['id']} (gate: {row['gate_result']})"
         points.append((px, py, label, passed))
 
     fig.canvas.draw()
@@ -645,8 +673,21 @@ def write_matrix(ranked: pd.DataFrame, criteria: Criteria, output_dir: Path, fic
     if fictional:
         title += " (fictional examples)"
     ax.set_title(title)
-    ax.text(0.0, -0.12, f"Filled: passed the gates. Hollow: parked or rejected. Lines at {t:g}.",
-            transform=ax.transAxes, fontsize=8, color="0.4")
+    handles = []
+    if decisions:
+        shown = [k for k in DECISIONS if k in set(decisions.get(i) for i in ranked["id"])]
+        handles += [Line2D([], [], marker="o", linestyle="", markersize=9, markerfacecolor=DECISION_COLOURS[k],
+                           markeredgecolor=DECISION_COLOURS[k], label=f"Decision: {DECISIONS[k].lower()}")
+                    for k in shown]
+    else:
+        handles.append(Line2D([], [], marker="o", linestyle="", markersize=9, markerfacecolor="0.45",
+                              markeredgecolor="0.45", label="Passed the hard gates (no decision shown)"))
+    handles.append(Line2D([], [], marker="o", linestyle="", markersize=9, markerfacecolor="white",
+                          markeredgecolor="0.45", markeredgewidth=2, label="Hollow: stopped at a hard gate"))
+    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.11), ncol=3, fontsize=8,
+              frameon=False)
+    ax.text(1.0, 1.01, f"Quadrant lines at {t:g}", transform=ax.transAxes, ha="right", va="bottom",
+            fontsize=8, color="0.4")
     fig.tight_layout()
     fig.savefig(path)
     plt.close(fig)
@@ -702,6 +743,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Vary each weight by +/-10 points and report whether the top 3 changes.")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR,
                         help="Where to write the outputs (default: outputs/).")
+    parser.add_argument("--decisions", type=Path, default=None,
+                        help="Optional CSV with 'id' and 'decision' columns (e.g. outputs/decisions.csv) to "
+                             "colour the matrix by decision.")
     return parser
 
 
@@ -711,6 +755,7 @@ def main(argv: list[str] | None = None) -> int:
         criteria = load_criteria(args.criteria)
         weights = parse_weights(args.weights, criteria) if args.weights else dict(criteria.weights)
         df = load_use_cases(args.input, criteria)
+        decisions = load_decisions(args.decisions) if args.decisions else None
     except InputError as exc:
         print("Input error:", file=sys.stderr)
         for message in exc.errors:
@@ -720,7 +765,8 @@ def main(argv: list[str] | None = None) -> int:
     ranked = score_use_cases(df, criteria, weights)
     warnings = consistency_warnings(df)
     csv_path, md_path = write_ranking(ranked, criteria, weights, args.output_dir, args.input, warnings)
-    png_path = write_matrix(ranked, criteria, args.output_dir, fictional=_is_bundled_example(args.input))
+    png_path = write_matrix(ranked, criteria, args.output_dir, fictional=_is_bundled_example(args.input),
+                            decisions=decisions)
 
     print("Weights:", ", ".join(f"{k}={v:g}" for k, v in weights.items()))
     cols = ["rank", "id", "weighted_score", "gate_result", "quadrant"]
