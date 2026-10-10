@@ -1,0 +1,8 @@
+id,title,business_function,ai_act_category,process_owner,data_owner,restricted_data,approved_environment_available,business_value,feasibility,data_maturity,ai_maturity,risk,strategic_fit
+T-01,Fictional test case A,Logistics,minimal,Owner A,Data owner A,no,no,5,5,4,5,5,4
+T-02,Fictional test case B,Quality,minimal,Owner B,Data owner B,no,no,4,3,3,3,4,4
+T-03,Fictional test case C,Maintenance,limited,Owner C,Data owner C,yes,yes,4,2,2,3,3,5
+T-04,Fictional test case D,Finance,minimal,Owner D,Data owner D,no,no,2,4,4,4,5,2
+T-05,Fictional test case E,HR,prohibited,Owner E,Data owner E,no,no,5,5,5,5,1,5
+T-06,Fictional test case F,Supply chain,minimal,Owner F,,no,no,5,4,4,4,4,5
+T-07,Fictional test case G,Engineering,minimal,Owner G,Data owner G,yes,no,5,4,4,4,4,5
