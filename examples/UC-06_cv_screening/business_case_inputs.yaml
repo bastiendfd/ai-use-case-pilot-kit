@@ -1,0 +1,129 @@
+# Business case inputs for UC-06.
+#
+# FICTIONAL EXAMPLE: "Northwind Aero Services", a fictional MRO and spare-parts
+# company. All figures are invented, round and for illustration.
+#
+# Generated summary: business_case.md in this folder
+# (python -m scoring.build_examples). Model and counting rules:
+# templates/business_case.md.
+
+use_case_id: UC-06
+title: Ranking of job applicants from their CVs
+fictional: true
+inputs:
+  volume_per_month:
+    label: Applications per month
+    value: 800
+    unit: applications / month
+    source: Applicant tracking system, 12-month average (fictional).
+    confidence: high
+  minutes_before:
+    label: Screening time per application today
+    value: 6
+    unit: minutes
+    source: Recruiter reads the CV against the job requirements.
+    confidence: medium
+  minutes_after:
+    label: Screening time per application with the solution
+    value: 3
+    unit: minutes
+    source: Recruiter still reviews every CV (human oversight) but starts from the ranking.
+    confidence: low
+  hourly_cost_eur:
+    label: Fully loaded cost per hour
+    value: 70
+    unit: EUR / hour
+    source: Controlling standard rate (fictional).
+    confidence: high
+  share_hours_redeployed:
+    label: Share of saved hours redeployed or avoiding a cost
+    value: 0.5
+    unit: share (0-1)
+    source: Time moved to candidate interviews and hiring-manager support.
+    confidence: low
+  error_rate_before:
+    label: Not modelled
+    value: 0
+    unit: share of applications
+    source: 'No error benefit is claimed: screening quality is not measured today.'
+    confidence: high
+  error_rate_after:
+    label: Not modelled
+    value: 0
+    unit: share of applications
+    source: No error benefit is claimed.
+    confidence: high
+  cost_per_error_eur:
+    label: Not modelled
+    value: 0
+    unit: EUR
+    source: No error benefit is claimed.
+    confidence: high
+  licence_cost_per_year_eur:
+    label: Licence cost per year
+    value: 24000
+    unit: EUR / year
+    source: Indicative quote for a screening module (fictional).
+    confidence: medium
+  build_days:
+    label: Internal build effort
+    value: 40
+    unit: person-days
+    source: Integration, configuration, tests.
+    confidence: medium
+  day_rate_eur:
+    label: Internal day rate
+    value: 600
+    unit: EUR / day
+    source: Controlling internal rate (fictional).
+    confidence: high
+  other_one_off_eur:
+    label: Other one-off costs
+    value: 60000
+    unit: EUR
+    source: 'High-risk duties before use: bias testing, documentation review, information of workers'' representatives,
+      legal review.'
+    confidence: low
+  run_cost_per_year_eur:
+    label: Run cost per year
+    value: 30000
+    unit: EUR / year
+    source: Log retention, monitoring, yearly bias audit, oversight training.
+    confidence: low
+  adoption_initial:
+    label: Adoption during the ramp-up
+    value: 0.5
+    unit: share of volume
+    source: Two job families first.
+    confidence: medium
+  ramp_months:
+    label: Length of the ramp-up
+    value: 3
+    unit: months
+    source: Roll-out plan.
+    confidence: medium
+  adoption_steady:
+    label: Adoption after the ramp-up
+    value: 0.8
+    unit: share of volume
+    source: Senior and specialist roles stay manual.
+    confidence: medium
+  discount_rate:
+    label: Discount rate
+    value: 0.08
+    unit: per year
+    source: Finance standard rate for internal projects (fictional).
+    confidence: high
+scenarios:
+  minutes_after:
+    pessimistic: 4
+    optimistic: 2.5
+    why: Oversight duties may keep review time close to today's.
+  share_hours_redeployed:
+    pessimistic: 0.25
+    optimistic: 0.75
+    why: Depends on hiring volume staying high.
+  adoption_steady:
+    pessimistic: 0.5
+    optimistic: 0.9
+    why: Depends on recruiter and works-council acceptance.

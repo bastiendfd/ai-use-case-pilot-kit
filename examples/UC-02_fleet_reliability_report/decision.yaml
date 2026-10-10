@@ -1,0 +1,50 @@
+# Decision for UC-02. FICTIONAL EXAMPLE ("Northwind Aero Services").
+# Judgement only: scores, triage and business case figures are computed and
+# filled into decision_record.md by `python -m scoring.build_examples`.
+
+use_case_id: UC-02
+fictional: true
+decision: go
+decision_date: 2026-10-20
+decision_makers:
+  - "Sponsor: Director of Engineering (fictional)"
+  - "Process owner: Head of Reliability Engineering (fictional)"
+  - "Finance: Controlling Business Partner (fictional)"
+stage: business case
+start_date: 2026-12-01   # planned go-live
+
+summary: >-
+  Go. Medium value but cheap, quick and low-risk: it reuses the existing BI
+  platform, the data is already used in reporting, and an engineer reviews
+  every report before it goes to a customer. The NPV stays positive in all
+  three scenarios, so the standard 6-month value review applies.
+
+score_reasons:
+  business_value: "67 hours per month saved (0.5 FTE) and fewer re-issued reports; about EUR 50k per year counted."
+  feasibility: "Existing BI platform, open-source anomaly detection, skills in-house, no new integration."
+  data_maturity: "Removal and flight-hour data are clean and already used in today's manual reports; one customer sends hours late."
+  ai_maturity: "Anomaly detection on reliability rates is common in industry; fewer references for this exact report."
+  risk: "Minimal risk; the engineer reviews every flag and report; errors are easy to detect and correct; no personal data."
+  strategic_fit: "Supports the customer-service objective on report timeliness (named KPI: reports issued by working day 5)."
+
+legal_review: "Not required (minimal-risk screening)."
+
+risks:
+  - risk: "Too many false anomaly flags; engineers stop reading them."
+    likelihood: M
+    impact: M
+    mitigation: "Thresholds tuned on 24 months of history; false-alarm rate reported monthly."
+    owner: "Head of Reliability Engineering"
+  - risk: "Late flight-hour data from one customer delays the report."
+    likelihood: H
+    impact: L
+    mitigation: "Report flags estimated hours explicitly; data-delivery clause raised with the account manager."
+    owner: "Maintenance Data Manager"
+
+conditions:
+  - "Generated reports for 3 fleets match the manual reports of the same month before go-live."
+  - "Each report states which figures are estimated and that anomaly flags are reviewed by an engineer."
+
+review:
+  date: 2027-06-01
+  what: "Realised vs. planned value, adoption, false-alarm rate, re-issued reports."

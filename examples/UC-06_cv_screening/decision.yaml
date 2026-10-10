@@ -1,0 +1,44 @@
+# Decision for UC-06. FICTIONAL EXAMPLE ("Northwind Aero Services").
+# Judgement only: scores, triage and business case figures are computed and
+# filled into decision_record.md by `python -m scoring.build_examples`.
+
+use_case_id: UC-06
+fictional: true
+decision: reject
+decision_date: 2026-10-20
+decision_makers:
+  - "Sponsor: Chief Human Resources Officer (fictional)"
+  - "Process owner: Head of Talent Acquisition (fictional)"
+  - "Legal/compliance: Compliance Officer (fictional)"
+stage: triage and business case
+
+summary: >-
+  Reject for now. Ranking applicants is a high-risk use under the AI Act
+  (Annex III, employment), with strong duties for the deployer and, if built
+  in-house, for the provider. Those duties cost more than the time saved:
+  the 3-year NPV is negative even in the optimistic scenario. Reopen only with
+  a materially new intake, for example a much higher hiring volume or a
+  certified product that covers the provider duties.
+
+score_reasons:
+  business_value: "40 recruiter hours per month (0.3 FTE); EUR 13k per year counted."
+  feasibility: "High-risk duties (oversight, logging, bias testing, information of workers' representatives) before any use."
+  data_maturity: "Past screening decisions are not recorded in a usable form and may carry historical bias."
+  ai_maturity: "CV ranking products are widely sold."
+  risk: "High-risk under Annex III point 4(a); errors affect people and are hard to detect."
+  strategic_fit: "No link to a stated company objective; hiring volume is stable."
+
+legal_review: "Screening reviewed by the compliance officer on 2026-10-15 (fictional); high-risk category confirmed."
+
+risks:
+  - risk: "Unfair ranking of applicants (bias)."
+    likelihood: M
+    impact: H
+    mitigation: "Not applicable: rejected."
+    owner: "Head of Talent Acquisition"
+
+conditions: []
+
+review:
+  date: "not applicable"
+  what: "Reopened only with a materially new intake."

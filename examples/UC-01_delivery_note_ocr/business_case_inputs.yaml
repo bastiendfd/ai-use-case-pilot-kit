@@ -1,0 +1,139 @@
+# Business case inputs for one use case.
+#
+# FICTIONAL EXAMPLE: UC-01 at "Northwind Aero Services", a fictional MRO and
+# spare-parts company. All figures are invented, round and for illustration.
+#
+# Build the workbook and the summary from this file:
+#   python -m scoring.build_examples
+# Same inputs as templates/business_case_inputs.yaml (the workbook example).
+#
+# Every input needs a value, a unit, a source or reasoning, and a confidence
+# level (low, medium, high). The model and the counting rules are described in
+# templates/business_case.md.
+
+use_case_id: UC-01
+title: Supplier delivery notes captured into the ERP without manual typing
+fictional: true
+
+inputs:
+  # Process and volumes ------------------------------------------------------
+  volume_per_month:
+    label: Transactions per month
+    value: 3000
+    unit: delivery notes / month
+    source: Goods-receipt log, 12-month average (fictional).
+    confidence: high
+  minutes_before:
+    label: Handling time per transaction today
+    value: 6
+    unit: minutes
+    source: Time study on a sample of 50 notes (fictional).
+    confidence: medium
+  minutes_after:
+    label: Handling time per transaction with the AI solution
+    value: 2
+    unit: minutes
+    source: Vendor demo on 30 sample notes; clerk checks and confirms each pre-filled receipt.
+    confidence: low
+  hourly_cost_eur:
+    label: Fully loaded cost per hour
+    value: 70
+    unit: EUR / hour
+    source: Controlling standard rate (fictional), including salary, social charges and overhead.
+    confidence: high
+  share_hours_redeployed:
+    label: Share of saved hours redeployed or avoiding a cost
+    value: 0.5
+    unit: share (0-1)
+    source: Process owner plan to move time to the backlog of supplier claims; the rest is absorbed and not counted as cash.
+    confidence: low
+  error_rate_before:
+    label: Error rate today
+    value: 0.03
+    unit: share of transactions
+    source: Stock-count findings traced to keying errors (fictional).
+    confidence: medium
+  error_rate_after:
+    label: Error rate with the AI solution
+    value: 0.01
+    unit: share of transactions
+    source: Remaining errors from low-confidence fields the clerk does not catch; estimate.
+    confidence: medium
+  cost_per_error_eur:
+    label: Cost per error
+    value: 50
+    unit: EUR / error
+    source: Rework time plus stock correction, estimated by the process owner.
+    confidence: medium
+  # Costs --------------------------------------------------------------------
+  licence_cost_per_year_eur:
+    label: Licence cost per year
+    value: 18000
+    unit: EUR / year
+    source: Indicative vendor quote for the document volume (fictional).
+    confidence: high
+  build_days:
+    label: Internal build effort
+    value: 60
+    unit: person-days
+    source: IT estimate for interface, configuration, testing and key-user time.
+    confidence: medium
+  day_rate_eur:
+    label: Internal day rate
+    value: 600
+    unit: EUR / day
+    source: Controlling internal rate (fictional).
+    confidence: high
+  other_one_off_eur:
+    label: Other one-off costs
+    value: 15000
+    unit: EUR
+    source: Training, change management and an external integration partner.
+    confidence: medium
+  run_cost_per_year_eur:
+    label: Run cost per year
+    value: 12000
+    unit: EUR / year
+    source: Hosting, monitoring, support and a monthly quality sample.
+    confidence: medium
+  # Adoption and finance -----------------------------------------------------
+  adoption_initial:
+    label: Adoption during the ramp-up
+    value: 0.5
+    unit: share of volume
+    source: Typical first-quarter adoption; only PDF notes from the largest suppliers at first.
+    confidence: medium
+  ramp_months:
+    label: Length of the ramp-up
+    value: 3
+    unit: months
+    source: Roll-out plan.
+    confidence: medium
+  adoption_steady:
+    label: Adoption after the ramp-up
+    value: 0.8
+    unit: share of volume
+    source: About 20% of notes are handwritten or unusual layouts and stay manual.
+    confidence: low
+  discount_rate:
+    label: Discount rate
+    value: 0.08
+    unit: per year
+    source: Finance standard rate for internal projects (fictional).
+    confidence: high
+
+# The three most uncertain inputs. Only these change between scenarios; the
+# base value is the one in "inputs".
+scenarios:
+  minutes_after:
+    pessimistic: 3
+    optimistic: 1.5
+    why: Checking time depends on extraction quality across 400 supplier layouts.
+  share_hours_redeployed:
+    pessimistic: 0.25
+    optimistic: 0.75
+    why: Depends on whether the claims backlog really absorbs the freed time.
+  adoption_steady:
+    pessimistic: 0.6
+    optimistic: 0.9
+    why: Depends on how many suppliers send machine-readable PDFs.

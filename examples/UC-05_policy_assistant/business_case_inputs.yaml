@@ -1,0 +1,129 @@
+# Business case inputs for UC-05.
+#
+# FICTIONAL EXAMPLE: "Northwind Aero Services", a fictional MRO and spare-parts
+# company. All figures are invented, round and for illustration.
+#
+# Generated summary: business_case.md in this folder
+# (python -m scoring.build_examples). Model and counting rules:
+# templates/business_case.md.
+
+use_case_id: UC-05
+title: Internal policy Q&A assistant on an approved language model
+fictional: true
+inputs:
+  volume_per_month:
+    label: Policy questions per month
+    value: 2000
+    unit: questions / month
+    source: Help-desk tickets and an intranet search log, 600 staff (fictional).
+    confidence: medium
+  minutes_before:
+    label: Time to find an answer today
+    value: 15
+    unit: minutes
+    source: Search the intranet, read the procedure, or ask quality, HR or IT.
+    confidence: low
+  minutes_after:
+    label: Time to find an answer with the assistant
+    value: 5
+    unit: minutes
+    source: Ask, read the answer and open the cited paragraph to check it.
+    confidence: low
+  hourly_cost_eur:
+    label: Fully loaded cost per hour
+    value: 70
+    unit: EUR / hour
+    source: Controlling standard rate (fictional).
+    confidence: high
+  share_hours_redeployed:
+    label: Share of saved hours redeployed or avoiding a cost
+    value: 0.25
+    unit: share (0-1)
+    source: Saving is spread over 600 people in 10-minute slices; only fewer help-desk tickets for quality and HR
+      are counted as avoided cost.
+    confidence: low
+  error_rate_before:
+    label: Share of questions leading to a wrongly applied procedure
+    value: 0.02
+    unit: share of questions
+    source: Internal audit findings traced to outdated or misread procedures (fictional).
+    confidence: low
+  error_rate_after:
+    label: Same share with the assistant
+    value: 0.015
+    unit: share of questions
+    source: Assistant cites the current version only; wrong answers remain possible.
+    confidence: low
+  cost_per_error_eur:
+    label: Cost per wrongly applied procedure
+    value: 200
+    unit: EUR / error
+    source: Rework and audit follow-up, averaged.
+    confidence: low
+  licence_cost_per_year_eur:
+    label: Licence cost per year
+    value: 12000
+    unit: EUR / year
+    source: Licence for an open-weight model and its serving software (fictional).
+    confidence: medium
+  build_days:
+    label: Internal build effort
+    value: 40
+    unit: person-days
+    source: Document pipeline, retrieval, access rights, user interface, tests.
+    confidence: medium
+  day_rate_eur:
+    label: Internal day rate
+    value: 600
+    unit: EUR / day
+    source: Controlling internal rate (fictional).
+    confidence: high
+  other_one_off_eur:
+    label: Other one-off costs
+    value: 20000
+    unit: EUR
+    source: Security review, on-premise environment set-up, AI literacy training.
+    confidence: medium
+  run_cost_per_year_eur:
+    label: Run cost per year
+    value: 10000
+    unit: EUR / year
+    source: On-premise compute share, monitoring, monthly answer-quality sample.
+    confidence: medium
+  adoption_initial:
+    label: Adoption during the ramp-up
+    value: 0.3
+    unit: share of questions
+    source: Pilot group of 100 users first.
+    confidence: medium
+  ramp_months:
+    label: Length of the ramp-up
+    value: 3
+    unit: months
+    source: Pilot plan.
+    confidence: medium
+  adoption_steady:
+    label: Adoption after the ramp-up
+    value: 0.6
+    unit: share of questions
+    source: Many questions still go to colleagues; typical for internal assistants (assumption).
+    confidence: low
+  discount_rate:
+    label: Discount rate
+    value: 0.08
+    unit: per year
+    source: Finance standard rate for internal projects (fictional).
+    confidence: high
+scenarios:
+  minutes_after:
+    pessimistic: 8
+    optimistic: 4
+    why: Users may not trust answers and re-check the full procedure.
+  share_hours_redeployed:
+    pessimistic: 0.1
+    optimistic: 0.4
+    why: Fragmented time savings rarely turn into avoided cost.
+  adoption_steady:
+    pessimistic: 0.35
+    optimistic: 0.75
+    why: Usage of internal assistants often drops after the launch.

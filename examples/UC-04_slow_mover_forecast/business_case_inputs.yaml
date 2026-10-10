@@ -1,0 +1,128 @@
+# Business case inputs for UC-04.
+#
+# FICTIONAL EXAMPLE: "Northwind Aero Services", a fictional MRO and spare-parts
+# company. All figures are invented, round and for illustration.
+#
+# Generated summary: business_case.md in this folder
+# (python -m scoring.build_examples). Model and counting rules:
+# templates/business_case.md.
+
+use_case_id: UC-04
+title: Demand forecast for slow-moving spare parts
+fictional: true
+inputs:
+  volume_per_month:
+    label: Part numbers reviewed per month
+    value: 2500
+    unit: part numbers / month
+    source: Slow-moving part numbers in the monthly planning cycle (fictional).
+    confidence: high
+  minutes_before:
+    label: Planning time per part number today
+    value: 3
+    unit: minutes
+    source: Planner checks history and sets the reorder point by judgement.
+    confidence: medium
+  minutes_after:
+    label: Planning time per part number with the solution
+    value: 2
+    unit: minutes
+    source: Planner reviews the proposed reorder point.
+    confidence: low
+  hourly_cost_eur:
+    label: Fully loaded cost per hour
+    value: 70
+    unit: EUR / hour
+    source: Controlling standard rate (fictional).
+    confidence: high
+  share_hours_redeployed:
+    label: Share of saved hours redeployed or avoiding a cost
+    value: 0.5
+    unit: share (0-1)
+    source: Time moved to supplier follow-up on overdue orders.
+    confidence: low
+  error_rate_before:
+    label: Stock-outs per part number and month
+    value: 0.02
+    unit: share of part numbers
+    source: Stock-out log, slow movers only (fictional).
+    confidence: medium
+  error_rate_after:
+    label: Stock-outs per part number and month with the solution
+    value: 0.016
+    unit: share of part numbers
+    source: Assumed 20% fewer stock-outs; no tested model yet.
+    confidence: low
+  cost_per_error_eur:
+    label: Cost per stock-out
+    value: 1000
+    unit: EUR / stock-out
+    source: Expedite freight and penalty share on late customer orders, averaged.
+    confidence: medium
+  licence_cost_per_year_eur:
+    label: Licence cost per year
+    value: 30000
+    unit: EUR / year
+    source: Indicative quote for a forecasting module (fictional).
+    confidence: medium
+  build_days:
+    label: Internal build effort
+    value: 100
+    unit: person-days
+    source: Data preparation, ERP integration, parameter tuning, tests.
+    confidence: low
+  day_rate_eur:
+    label: Internal day rate
+    value: 600
+    unit: EUR / day
+    source: Controlling internal rate (fictional).
+    confidence: high
+  other_one_off_eur:
+    label: Other one-off costs
+    value: 20000
+    unit: EUR
+    source: Training and an integration partner.
+    confidence: medium
+  run_cost_per_year_eur:
+    label: Run cost per year
+    value: 10000
+    unit: EUR / year
+    source: Monitoring and yearly re-tuning.
+    confidence: medium
+  adoption_initial:
+    label: Adoption during the ramp-up
+    value: 0.3
+    unit: share of volume
+    source: Planners first compare forecast and judgement side by side.
+    confidence: low
+  ramp_months:
+    label: Length of the ramp-up
+    value: 6
+    unit: months
+    source: Roll-out plan.
+    confidence: medium
+  adoption_steady:
+    label: Adoption after the ramp-up
+    value: 0.7
+    unit: share of volume
+    source: Parts with fewer than 3 demands a year stay on manual planning.
+    confidence: low
+  discount_rate:
+    label: Discount rate
+    value: 0.08
+    unit: per year
+    source: Finance standard rate for internal projects (fictional).
+    confidence: high
+scenarios:
+  error_rate_after:
+    pessimistic: 0.019
+    optimistic: 0.013
+    why: With 14 months of clean history the forecast may barely beat judgement.
+  minutes_after:
+    pessimistic: 2.5
+    optimistic: 1.5
+    why: Depends on how often planners override the proposal.
+  adoption_steady:
+    pessimistic: 0.4
+    optimistic: 0.85
+    why: Depends on planner trust and on how many parts have enough demand history.

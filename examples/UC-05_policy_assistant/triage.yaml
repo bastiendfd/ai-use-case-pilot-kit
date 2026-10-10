@@ -1,0 +1,39 @@
+# AI Act triage answers for UC-05.
+#
+# FICTIONAL EXAMPLE ("Northwind Aero Services", a fictional company).
+# Questions and article references: triage/triage_checklist.yaml.
+# Screening aid only, not legal advice.
+#
+# LLM assistant that answers staff questions on internal policies. Staff
+# interact with it directly (Art. 50(1)). Whether the Art. 50(2) marking duty
+# applies to answers shown only to staff is left 'unknown' for legal to
+# confirm; it is treated as 'yes' meanwhile.
+
+use_case_id: UC-05
+answers:
+  uses_gpai_model: 'yes'
+  is_ai_system: 'yes'
+  exclusively_military: 'no'
+  prohibited_manipulation: 'no'
+  prohibited_exploit_vulnerabilities: 'no'
+  prohibited_intimate_imagery: 'no'
+  prohibited_csam: 'no'
+  prohibited_social_scoring: 'no'
+  prohibited_crime_prediction: 'no'
+  prohibited_face_scraping: 'no'
+  prohibited_workplace_emotion: 'no'
+  prohibited_biometric_categorisation: 'no'
+  prohibited_realtime_rbi: 'no'
+  annex_i_safety_component: 'no'
+  annex_iii_biometrics: 'no'
+  annex_iii_critical_infrastructure: 'no'
+  annex_iii_education: 'no'
+  annex_iii_employment: 'no'
+  annex_iii_essential_services: 'no'
+  annex_iii_law_enforcement: 'no'
+  annex_iii_migration: 'no'
+  annex_iii_justice_democracy: 'no'
+  transparency_interacts_with_people: 'yes'
+  transparency_generates_content: unknown
+  transparency_emotion_or_biometric: 'no'
+  transparency_deep_fake_or_public_text: 'no'

@@ -1,0 +1,49 @@
+# Decision for UC-04. FICTIONAL EXAMPLE ("Northwind Aero Services").
+# Judgement only: scores, triage and business case figures are computed and
+# filled into decision_record.md by `python -m scoring.build_examples`.
+
+use_case_id: UC-04
+fictional: true
+decision: park
+decision_date: 2026-10-20
+decision_makers:
+  - "Sponsor: Director of Supply Chain (fictional)"
+  - "Process owner: Head of Materials Planning (fictional)"
+  - "Finance: Controlling Business Partner (fictional)"
+stage: business case
+
+summary: >-
+  Park. The idea is sound but the data is not ready: after the ERP migration
+  only 14 months of clean demand history exist, and slow movers need at least
+  24 months to show a pattern. The business case is fragile for the same
+  reason: its pessimistic NPV is strongly negative and the base case pays back
+  only in month 23. Reopen when 24 months of clean history exist.
+
+score_reasons:
+  business_value: "42 planner hours per month and about 10 stock-outs avoided per month; EUR 96k per year counted, mostly from stock-outs."
+  feasibility: "Forecasting module with an ERP interface; tuning for intermittent demand needs skills we only partly have."
+  data_maturity: "Only 14 months of clean demand history since the ERP migration; slow movers need at least 24."
+  ai_maturity: "Intermittent-demand forecasting is used in spare-parts planning in several industries."
+  risk: "Minimal risk; the planner sets the stock levels; errors show as stock-outs or excess stock, both visible."
+  strategic_fit: "Supports a functional goal (fewer expedite costs), not a named company objective."
+
+legal_review: "Not required (minimal-risk screening)."
+
+risks:
+  - risk: "With short history the forecast does not beat planner judgement."
+    likelihood: H
+    impact: H
+    mitigation: "Park until 24 months of history; then back-test before any build."
+    owner: "Head of Materials Planning"
+  - risk: "Pre-migration history is reloaded in a hurry and brings errors back."
+    likelihood: M
+    impact: M
+    mitigation: "No reload without a data-quality check by the data owner."
+    owner: "ERP Master Data Lead"
+
+conditions: []
+
+review:
+  date: 2027-09-01
+  what: "Length and quality of the demand history; then a back-test of a simple forecast against planner judgement."
+  reopening_trigger: "24 months of clean demand history available (expected August 2027), confirmed by the data owner."

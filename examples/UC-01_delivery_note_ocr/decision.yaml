@@ -1,0 +1,61 @@
+# Decision for UC-01. FICTIONAL EXAMPLE ("Northwind Aero Services").
+# Judgement only: scores, triage and business case figures are computed and
+# filled into decision_record.md by `python -m scoring.build_examples`.
+
+use_case_id: UC-01
+fictional: true
+decision: go_with_conditions
+decision_date: 2026-10-20
+decision_makers:
+  - "Sponsor: Director of Supply Chain (fictional)"
+  - "Process owner: Head of Goods Receipt (fictional)"
+  - "Finance: Controlling Business Partner (fictional)"
+  - "IT: Head of ERP Applications (fictional)"
+stage: business case
+start_date: 2027-01-11   # planned go-live
+
+summary: >-
+  Go, with conditions. The case is the portfolio's clear quick win: high
+  volume, a proven technique and a human check on every receipt. The base case
+  pays back in 11 months, but the pessimistic scenario does not pay back within
+  3 years, so the go is tied to a 3-month review gate on time saved and
+  adoption, the two inputs the process owner can measure early.
+
+score_reasons:
+  business_value: "200 hours per month saved (1.5 FTE gross) plus 60 errors avoided per month; EUR 96k per year counted in the base case."
+  feasibility: "Configurable document AI product with the ERP's standard inbound interface; skills available with vendor support."
+  data_maturity: "24 months of archived PDFs and a clean purchase-order reference; about 400 supplier layouts and some poor scans."
+  ai_maturity: "Document extraction is a standard product, widely deployed for delivery notes and invoices."
+  risk: "Minimal risk, clerk confirms every receipt, errors caught by the three-way match; driver names on some notes keep it below 5."
+  strategic_fit: "Supports the stated supply-chain objective on stock accuracy (named KPI: inventory record accuracy)."
+
+legal_review: "Not required for a minimal-risk screening; data protection officer to confirm that driver names are ignored."
+
+risks:
+  - risk: "Extraction quality is lower on scans and rare supplier layouts, so checking time stays high."
+    likelihood: M
+    impact: H
+    mitigation: "Acceptance test on 500 real notes before go-live; layouts below 90% field accuracy stay manual."
+    owner: "Process owner"
+  - risk: "Freed time is absorbed instead of going to the supplier-claims backlog."
+    likelihood: M
+    impact: M
+    mitigation: "Claims backlog tracked monthly next to the time saved; reported at the gate."
+    owner: "Process owner"
+  - risk: "Clerks confirm pre-filled values without checking (automation bias)."
+    likelihood: M
+    impact: M
+    mitigation: "Low-confidence fields highlighted; monthly sample of 50 posted receipts checked against the notes."
+    owner: "Head of Goods Receipt"
+
+conditions:
+  - "Extraction accuracy of at least 95% of fields on a 500-note acceptance test before go-live."
+  - "Baseline handling time and error rate measured over 4 weeks before go-live, with the method reused at the gate."
+  - "Driver names and signatures are not extracted or stored (data protection officer sign-off)."
+
+gate_metrics:
+  minutes_after: "Time study on 50 delivery notes in month 3, same method as the 6-minute baseline: median time from opening the note to posting the receipt."
+  adoption_steady: "Share of all delivery notes received in month 3 that the tool could pre-fill (machine-readable layouts). This is the ceiling for steady adoption; the planned 50% use during the supplier roll-out is not the trigger."
+
+review:
+  what: "Measured time saved, processable share of notes, field accuracy, claims backlog, incidents."

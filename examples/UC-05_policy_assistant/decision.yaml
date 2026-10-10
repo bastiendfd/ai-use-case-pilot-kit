@@ -1,0 +1,63 @@
+# Decision for UC-05. FICTIONAL EXAMPLE ("Northwind Aero Services").
+# Judgement only: scores, triage and business case figures are computed and
+# filled into decision_record.md by `python -m scoring.build_examples`.
+
+use_case_id: UC-05
+fictional: true
+decision: pilot
+decision_date: 2026-10-20
+decision_makers:
+  - "Sponsor: Chief Operating Officer (fictional)"
+  - "Process owner: Head of Quality Management (fictional)"
+  - "IT security: Chief Information Security Officer (fictional)"
+  - "Legal/compliance: Compliance Officer (fictional)"
+stage: business case
+start_date: 2027-01-11   # pilot start
+
+summary: >-
+  Pilot, on the approved on-premise environment only. Staff spend real time
+  looking for the current version of procedures, but the benefit is spread
+  thin and depends on usage that often drops after launch. Some policies
+  include export-control procedures, so no public cloud model may be used.
+  The pessimistic scenario is clearly negative, so the 3-month pilot with 100
+  users ends at a review gate on time saved and adoption.
+
+score_reasons:
+  business_value: "333 hours per month saved (2.5 FTE gross) but in 10-minute slices across 600 staff; only EUR 56k per year counted, so scored 4, not 5."
+  feasibility: "Retrieval on an approved open-weight model on-premise; custom build, skills partly available."
+  data_maturity: "Policies exist in the document system, but old versions and duplicates must be excluded first."
+  ai_maturity: "Retrieval-based assistants are deployed in industry, but answer quality on internal documents varies."
+  risk: "Limited risk (Art. 50 transparency); wrong answers can lead to a wrongly applied procedure, caught by audits."
+  strategic_fit: "Supports a functional goal of the quality department (fewer audit findings), not a company objective."
+
+legal_review: "Required: compliance to confirm the transparency duties (Art. 50(1)) and whether Art. 50(2) marking applies to answers shown only to staff."
+
+risks:
+  - risk: "Wrong or outdated answer is applied in operations."
+    likelihood: M
+    impact: H
+    mitigation: "Every answer cites the source paragraph and its version; safety-relevant topics answer with the link only."
+    owner: "Head of Quality Management"
+  - risk: "Export-controlled content leaves the approved environment."
+    likelihood: L
+    impact: H
+    mitigation: "On-premise model only, no external API calls, access rights mirrored from the document system."
+    owner: "Chief Information Security Officer"
+  - risk: "Usage drops after the launch."
+    likelihood: H
+    impact: M
+    mitigation: "Adoption trigger at the gate; feedback button and monthly answer-quality sample."
+    owner: "Head of Quality Management"
+
+conditions:
+  - "Runs only on the approved on-premise environment; no public cloud model or API."
+  - "Users are told they are interacting with an AI system at the first interaction (Art. 50(1))."
+  - "AI literacy session for the 100 pilot users before access (Art. 4)."
+  - "Answer-quality test on 100 reference questions with at least 90% correct and cited answers before the pilot starts."
+
+gate_metrics:
+  minutes_after: "Task-time test with 20 pilot users on 10 standard questions, compared with the 15-minute baseline measured on the same questions before the pilot."
+  adoption_steady: "Share of the pilot group's policy questions in month 3 answered through the assistant (assistant sessions divided by sessions plus help-desk tickets on policies)."
+
+review:
+  what: "Measured time saved and adoption, answer-quality sample, incidents; decision to roll out, rework or stop."

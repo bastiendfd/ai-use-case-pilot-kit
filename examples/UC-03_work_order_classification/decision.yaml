@@ -1,0 +1,64 @@
+# Decision for UC-03. FICTIONAL EXAMPLE ("Northwind Aero Services").
+# Judgement only: scores, triage and business case figures are computed and
+# filled into decision_record.md by `python -m scoring.build_examples`.
+
+use_case_id: UC-03
+fictional: true
+decision: pilot
+decision_date: 2026-10-20
+decision_makers:
+  - "Sponsor: Director of Maintenance (fictional)"
+  - "Process owner: Head of Maintenance Planning (fictional)"
+  - "Data owner: Maintenance Data Manager (fictional)"
+  - "Finance: Controlling Business Partner (fictional)"
+stage: business case
+start_date: 2026-12-01   # pilot start
+
+summary: >-
+  Pilot. The value is real but rests on an untested assumption: that a model
+  can code our technicians' free text well enough. The failure-code list also
+  needs a clean-up first. A 3-month pilot on two aircraft types measures
+  accuracy, time saved and coverage before any roll-out. The pessimistic
+  scenario is negative, so the pilot ends with a review gate with stop or
+  rework triggers; accuracy is added as a third trigger because it is the
+  pilot's main question.
+
+score_reasons:
+  business_value: "125 hours per month saved (0.9 FTE gross) and 600 wrong codes per month avoided; EUR 112k per year counted."
+  feasibility: "Known technique but a custom model and one integration into the work-order screen; ML skills partly in-house."
+  data_maturity: "Free text is short and full of abbreviations; the code list has duplicates and retired codes; clean-up needed first."
+  ai_maturity: "Text classification has production references in maintenance; few in our language mix."
+  risk: "Minimal risk; the planner confirms every code; a wrong code affects analysis, not airworthiness release."
+  strategic_fit: "Supports the reliability objective (named KPI: share of work orders with a valid failure code)."
+
+legal_review: "Not required for a minimal-risk screening; to repeat if the codes feed an approved reliability programme."
+
+risks:
+  - risk: "Accuracy on real free text stays well below the 8% target error rate."
+    likelihood: M
+    impact: H
+    mitigation: "Blind audit of 300 pilot work orders; stop trigger at the pessimistic error rate."
+    owner: "Maintenance Data Manager"
+  - risk: "Code-list clean-up takes longer than planned and delays the pilot."
+    likelihood: M
+    impact: M
+    mitigation: "Clean-up limited to the codes used by the two pilot aircraft types."
+    owner: "Head of Reliability Engineering"
+  - risk: "Planners accept suggestions without reading the text."
+    likelihood: M
+    impact: M
+    mitigation: "Suggestion shown with its confidence; low-confidence cases require a manual pick."
+    owner: "Head of Maintenance Planning"
+
+conditions:
+  - "Code-list clean-up for the two pilot aircraft types finished before the pilot starts."
+  - "Baseline error rate re-measured on 300 recent work orders with the same audit method."
+  - "Pilot limited to two aircraft types and the line-maintenance planners; no change to release procedures."
+
+gate_metrics:
+  minutes_after: "Median time per work order from opening to confirming the code, logged by the work-order screen in month 3 of the pilot."
+  adoption_steady: "Share of pilot work orders in month 3 for which the model returns a code above the confidence threshold (coverage)."
+  error_rate_after: "Share of wrong final codes in a blind audit of 300 pilot work orders, same method as the 20% baseline."
+
+review:
+  what: "Measured accuracy, time saved and coverage; decision to roll out, rework or stop."
