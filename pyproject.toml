@@ -1,0 +1,9 @@
+[project]
+name = "ai-use-case-pilot-kit"
+version = "0.1.0"
+description = "Identify, triage, prioritise and track AI use cases in a regulated industry."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
