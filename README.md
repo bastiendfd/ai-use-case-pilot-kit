@@ -47,7 +47,11 @@ roles involved and the typical failure modes of each step, is in [`METHOD.md`](M
 
 ## Why I built this
 
-<!-- Bastien writes this section -->
+I work as a Business Analyst in aerospace, where I also coordinate my site's digital roadmap. Since generative AI arrived, AI ideas keep coming: read this document automatically, write that report, answer these questions. Finding ideas was never the hard part. Deciding which ones deserve time and money, which ones the EU AI Act constrains, and whether they actually paid off after go-live was.
+
+Automation projects taught me that a gain promised in a business case is not always a gain delivered. So I built the toolkit I wished I had: one intake form, one scoring grid, one AI Act check, one business case and one way to track value after go-live, applied end to end to six fictional use cases.
+
+It is a starting point, not a standard. The weights, thresholds and examples are meant to be challenged.
 
 ## What happened to the six cases (as of 31 December 2027)
 
