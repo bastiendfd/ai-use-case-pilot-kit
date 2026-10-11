@@ -1,0 +1,83 @@
+# Second decision for UC-03, after the pilot. FICTIONAL EXAMPLE ("Northwind Aero Services").
+# Judgement only: scores, triage and business case figures are computed and
+# filled into decision_record_2.md by `python -m scoring.build_examples`.
+# The first decision (pilot) and its review gates are in decision.yaml.
+
+use_case_id: UC-03
+fictional: true
+decision: go_with_conditions
+decision_date: 2027-06-10
+decision_makers:
+  - "Sponsor: Director of Maintenance (fictional)"
+  - "Process owner: Head of Maintenance Planning (fictional)"
+  - "Data owner: Maintenance Data Manager (fictional)"
+  - "Finance: Controlling Business Partner (fictional)"
+stage: end of pilot (after the review gates of 2027-03-01 and 2027-06-01)
+start_date: 2027-07-01   # roll-out to all aircraft types
+earlier_rework_cost_eur: 18000   # pilot rework, counted in every re-run
+
+summary: >-
+  Pilot to go with conditions. The pilot gate fired in March and the rework
+  worked: at the June gate no trigger was reached (11% wrong codes, 62%
+  coverage). Performance is still below the original plan (8% and 80%), and
+  the pessimistic scenario of the business case is still negative, so the
+  roll-out to all aircraft types gets its own review gate 3 months after it
+  starts, with the same triggers. The value tracking keeps the original plan,
+  so the gap stays visible.
+
+score_reasons:
+  business_value: "Unchanged since the pilot decision: 125 hours per month saved (0.9 FTE gross) and 600 wrong codes per month avoided at full plan."
+  feasibility: "Model, retraining routine and work-order screen integration now proven in the pilot; score kept at 3 until the roll-out to all types works."
+  data_maturity: "Code list cleaned for the pilot types only; engine-shop work orders still use another coding scheme."
+  ai_maturity: "Text classification has production references in maintenance; our pilot confirms it on shorthand after relabelling."
+  risk: "Minimal risk; the planner confirms every code; a wrong code affects analysis, not airworthiness release."
+  strategic_fit: "Supports the reliability objective (named KPI: share of work orders with a valid failure code)."
+
+legal_review: "Not required for a minimal-risk screening; to repeat if the codes feed an approved reliability programme."
+
+risks:
+  - risk: "Accuracy drops on aircraft types not covered by the pilot."
+    likelihood: M
+    impact: H
+    mitigation: "Blind audit of 300 work orders across all types in month 3 of the roll-out; stop trigger unchanged."
+    owner: "Maintenance Data Manager"
+  - risk: "Coverage stays low because engine-shop work orders use another coding scheme."
+    likelihood: H
+    impact: M
+    mitigation: "Mapping of the engine-shop scheme scoped as a separate change; coverage reported monthly."
+    owner: "Head of Reliability Engineering"
+  - risk: "Planners accept suggestions without reading the text."
+    likelihood: M
+    impact: M
+    mitigation: "Low-confidence cases still require a manual pick; monthly sample of 50 confirmed codes."
+    owner: "Head of Maintenance Planning"
+
+conditions:
+  - "Roll-out by aircraft type, with the cleaned code list loaded before each type goes live."
+  - "Retraining every quarter with the planners' corrections."
+  - "No change to release procedures; the code remains an analysis field."
+
+gate_metrics:
+  minutes_after: "Median time per work order from opening to confirming the code, from the work-order screen log, month 3 of the roll-out (September 2027)."
+  adoption_steady: "Share of all work orders closed in month 3 of the roll-out for which the model returns a code above the confidence threshold."
+  error_rate_after: "Share of wrong final codes in a blind audit of 300 work orders across all aircraft types, same method as the 20% baseline."
+
+review:
+  what: "Measured accuracy, time saved and coverage on all aircraft types; realised value against the original plan."
+
+# Review gate held (fictional).
+gate_reviews:
+  - date: 2027-10-01
+    measured:
+      error_rate_after: 0.11
+      minutes_after: 0.7
+      adoption_steady: 0.53
+    decision: continue
+    summary: >-
+      No trigger reached on all aircraft types: 11% wrong codes, 1.3 minutes
+      saved per work order and 53% coverage. Coverage is only just above the
+      50% threshold because engine-shop work orders use another coding
+      scheme. The re-run NPV, including the pilot rework cost, is positive but
+      small. Continue to the value review in January, where the 50% rule of
+      the method applies.
+    next_review: 2028-01-01

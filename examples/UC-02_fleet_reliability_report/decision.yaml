@@ -48,3 +48,22 @@ conditions:
 review:
   date: 2027-06-01
   what: "Realised vs. planned value, adoption, false-alarm rate, re-issued reports."
+
+# Value reviews (fictional).
+review_log:
+  - date: 2027-06-01
+    type: value review
+    outcome: continue
+    summary: >-
+      First six months on plan (100%). One false anomaly flag, caused by a
+      sensor data gap, led to an input check. Engineers read the flags.
+    next_review: 2027-12-01
+  - date: 2027-12-01
+    type: value review
+    outcome: scale
+    summary: >-
+      Twelve months on plan (101%) with two minor incidents. Decision: extend
+      the automated report and anomaly flags to the component shop in 2028,
+      with a short business case addendum at the next review.
+    next_review: 2028-06-01
+

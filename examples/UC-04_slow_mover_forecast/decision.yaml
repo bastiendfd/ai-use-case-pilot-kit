@@ -47,3 +47,15 @@ review:
   date: 2027-09-01
   what: "Length and quality of the demand history; then a back-test of a simple forecast against planner judgement."
   reopening_trigger: "24 months of clean demand history available (expected August 2027), confirmed by the data owner."
+
+# Park reviews (fictional).
+review_log:
+  - date: 2027-09-01
+    type: park review
+    outcome: remain_parked
+    summary: >-
+      Reopening trigger not met. The data owner found that the 2026 ERP
+      migration duplicated six months of demand; clean history is 18 months,
+      not 24. Re-check when 24 clean months are available.
+    next_review: 2028-03-01
+

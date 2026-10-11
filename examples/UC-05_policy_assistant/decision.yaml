@@ -61,3 +61,22 @@ gate_metrics:
 
 review:
   what: "Measured time saved and adoption, answer-quality sample, incidents; decision to roll out, rework or stop."
+
+# Review gate held (fictional).
+gate_reviews:
+  - date: 2027-04-11
+    measured:
+      minutes_after: 7              # task-time test: 8 minutes saved per question
+      adoption_steady: 0.30         # share of the pilot group's policy questions, month 3
+      share_hours_redeployed: 0.1   # monitored, not a trigger
+    decision: stop
+    summary: >-
+      Adoption trigger reached: only 30% of the pilot group's policy questions
+      went through the assistant in month 3 (stop or rework at 35% or less).
+      Users who used it saved time (8 minutes per question), but most kept
+      asking colleagues or the help desk, mainly because answers on
+      safety-relevant topics only return a link. The re-run on the measured
+      values is negative, and the sponsor did not want to relax the
+      safety-topic rule to raise usage. Decision: stop. The cleaned policy
+      library and the 100 reference questions are kept for a later intake.
+

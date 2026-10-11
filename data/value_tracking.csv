@@ -5,33 +5,39 @@ UC-01,2027-03-01,5000,5580,0.6,0,
 UC-01,2027-04-01,8000,6696,0.72,1,"Review gate 2027-04-11 passed: 3.6 minutes saved per note, 78% of notes processable. Decision: continue."
 UC-01,2027-05-01,8000,7161,0.77,0,
 UC-01,2027-06-01,8000,7347,0.79,0,
-UC-01,2027-07-01,8000,7440,0.8,1,Steady state. Checking takes 2.4 minutes instead of the planned 2.
+UC-01,2027-07-01,8000,7440,0.8,1,Value review 2027-07-11: about 90% of plan in the first six months. Decision: continue.
 UC-01,2027-08-01,8000,7440,0.8,0,
 UC-01,2027-09-01,8000,7533,0.81,0,
 UC-01,2027-10-01,8000,7626,0.82,0,
 UC-01,2027-11-01,8000,7626,0.82,0,
-UC-01,2027-12-01,8000,7719,0.83,0,
+UC-01,2027-12-01,8000,7719,0.83,0,Steady state. Checking takes 2.4 minutes instead of the planned 2; next value review 2028-01-11.
 UC-02,2026-12-01,2310,2218,0.48,0,First automated reports for half of the fleets.
 UC-02,2027-01-01,2310,2402,0.52,1,One anomaly flag on a sensor data gap (false alarm); input check added.
 UC-02,2027-02-01,4158,4066,0.88,0,All fleets on the automated report.
 UC-02,2027-03-01,4158,4158,0.9,0,
 UC-02,2027-04-01,4158,4158,0.9,0,
 UC-02,2027-05-01,4158,4204,0.91,0,
-UC-02,2027-06-01,4158,4250,0.92,0,
+UC-02,2027-06-01,4158,4250,0.92,0,Value review 2027-06-01: on plan. Decision: continue.
 UC-02,2027-07-01,4158,4250,0.92,0,
 UC-02,2027-08-01,4158,4158,0.9,1,Late flight-hour feed from one operator; report re-issued.
 UC-02,2027-09-01,4158,4250,0.92,0,
 UC-02,2027-10-01,4158,4297,0.93,0,
 UC-02,2027-11-01,4158,4297,0.93,0,
+UC-02,2027-12-01,4158,4343,0.94,0,Value review 2027-12-01: on plan for 12 months. Decision: scale to the component shop reports in 2028.
 UC-03,2026-12-01,4650,886,0.18,4,Pilot start on two aircraft types. Model unsure on technician shorthand.
 UC-03,2027-01-01,4650,1404,0.24,5,
 UC-03,2027-02-01,4650,1580,0.27,3,Below plan: 15% wrong codes (plan 8%) and confident codes for only 45% of pilot work orders (plan 80%). Training labels still held retired codes.
 UC-03,2027-03-01,4650,1650,0.25,3,Review gate 2027-03-01 fired (error rate and coverage). Decision: rework. Relabelling and retraining.
 UC-03,2027-04-01,4650,2456,0.3,2,
 UC-03,2027-05-01,4650,3249,0.36,1,"Rework done: 11% wrong codes, 62% coverage."
-UC-03,2027-06-01,9300,3790,0.42,2,Review gate 2027-06-01: no trigger reached. Decision: continue. Roll-out to all aircraft types starts.
-UC-03,2027-07-01,9300,4242,0.47,1,
+UC-03,2027-06-01,9300,3790,0.42,2,"Review gate 2027-06-01: no trigger reached. Decision: continue. New decision on 2027-06-10: go with conditions, roll-out to all aircraft types from July."
+UC-03,2027-07-01,9300,4242,0.47,1,Roll-out to all aircraft types starts.
 UC-03,2027-08-01,9300,4603,0.51,1,
 UC-03,2027-09-01,9300,4783,0.53,1,
-UC-03,2027-10-01,9300,4964,0.55,0,
-UC-03,2027-11-01,9300,5054,0.56,1,"About half of plan over the last 6 months: coverage stalls at about 60% because engine-shop work orders use another coding scheme, and the error rate stays at 11% instead of 8%."
+UC-03,2027-10-01,9300,4964,0.55,0,Review gate 2027-10-01 (3 months after the roll-out start): 11% wrong codes and 53% of work orders with a confident code in September. No trigger reached. Decision: continue.
+UC-03,2027-11-01,9300,5054,0.56,1,"About half of plan over the last 6 months: coverage stalls at about 55% because engine-shop work orders use another coding scheme, and the error rate stays at 11% instead of 8%."
+UC-03,2027-12-01,9300,5144,0.57,1,"Next value review on 2028-01-01, where the 50% rule of the method (step 5) applies."
+UC-05,2027-01-01,2350,994,0.22,1,Pilot start on 11 January with 100 users; partial month.
+UC-05,2027-02-01,2350,1800,0.27,2,Two outdated answers reported through the feedback button; source versions corrected.
+UC-05,2027-03-01,2350,2000,0.3,1,Usage stays low: 30% of the pilot group's policy questions go through the assistant.
+UC-05,2027-04-01,4700,667,0.3,0,Review gate 2027-04-11: adoption 30% (stop or rework at 35% or less). Decision: stop. Access closed on 11 April; partial month.

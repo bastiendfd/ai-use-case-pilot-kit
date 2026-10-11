@@ -1,0 +1,12 @@
+# Fictional example portfolio settings.
+#
+# FICTIONAL: "Northwind Aero Services" is a fictional MRO and spare-parts
+# company. All names, dates and figures in examples/ and data/ are invented.
+#
+# as_of_date: the date the story is told from. Every review due on or before
+# this date must be recorded in a decision file, value tracking runs from each
+# go-live or pilot start to this month (or to the month a case was stopped),
+# and nothing is dated after it. `python -m scoring.build_examples` checks this.
+
+company: Northwind Aero Services (fictional)
+as_of_date: 2027-12-31

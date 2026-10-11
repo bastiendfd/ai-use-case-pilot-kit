@@ -73,3 +73,15 @@ gate_reviews:
       minutes) because clerks re-read low-confidence fields, but time saved and
       the processable share are both well above their thresholds. The case
       moves to the standard value review.
+    next_review: 2027-07-11   # value review, 6 months after go-live
+
+# Value reviews after the gate (fictional).
+review_log:
+  - date: 2027-07-11
+    type: value review
+    outcome: continue
+    summary: >-
+      First six months at 91% of plan. Checking still takes 2.4 minutes, and
+      about half of the freed time goes to the supplier-claims backlog as
+      planned. No action needed.
+    next_review: 2028-01-11
