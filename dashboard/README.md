@@ -6,11 +6,11 @@ Two ways to see the portfolio:
 
 1. **Static charts, no Power BI needed:** `python dashboard/charts.py` writes
    three PNG files to `outputs/` (also run by `python -m scoring.build_examples`):
-   - `portfolio_overview.png`: rank, score, decision, AI Act category, NPV
-     range and review-gate outcomes per use case (the figure at the top of the
-     main README);
+   - `portfolio_overview.png`: rank, score, status on the as-of date, AI Act
+     category, NPV range and the history of each case (decisions, review gates
+     and value reviews); the figure at the top of the main README;
    - `cumulative_value.png`: cumulative planned vs. realised value per tracked
-     use case, with the review gates marked;
+     use case, with the review gates, value reviews and new decisions marked;
    - `adoption.png`: realised adoption against the business case plan.
 2. **A Power BI report** for management, built from the same files. The design
    below is what to build; the `.pbix` file is not part of this repository.
@@ -27,6 +27,8 @@ erDiagram
         string use_case_id PK
         string short_title
         string decision
+        string status
+        string decision_history
         string ai_act_category
         int rank
         float weighted_score
@@ -34,6 +36,10 @@ erDiagram
         float npv_base_eur
         float npv_optimistic_eur
         string gate_outcomes
+        string other_reviews
+        date next_review
+        date stopped_on
+        date as_of
     }
     fact_value_tracking {
         string use_case_id FK
@@ -56,7 +62,7 @@ erDiagram
 | Table | Source | Grain | Notes |
 |---|---|---|---|
 | `fact_value_tracking` | `data/value_tracking.csv` | one row per use case and month | `month` is the first day of the month. Amounts in euros per month, not cumulative. |
-| `dim_use_case` | `outputs/decisions.csv` | one row per use case | Rename `id` to `use_case_id`. Also holds the cases without tracking data (park, reject, pilots not yet live), so the portfolio page shows all six. |
+| `dim_use_case` | `outputs/decisions.csv` | one row per use case | Rename `id` to `use_case_id`. `decision` is the latest decision; `status` is the same, or `stopped` when a review ended the case. Also holds the cases without tracking data (park, reject), so the portfolio page shows all six. |
 | `dim_date` | DAX calculated table | one row per day | Mark as date table. |
 
 Relationships: `dim_use_case[use_case_id]` 1 → * `fact_value_tracking[use_case_id]`
@@ -122,7 +128,7 @@ Use cases = DISTINCTCOUNT ( dim_use_case[use_case_id] )
 Base NPV of approved cases =
 CALCULATE (
     SUM ( dim_use_case[npv_base_eur] ),
-    dim_use_case[decision] IN { "go", "go_with_conditions", "pilot" }
+    dim_use_case[status] IN { "go", "go_with_conditions", "pilot" }
 )
 
 Cases with a negative scenario =
@@ -138,16 +144,17 @@ amber, below 50% red (the review rule in `METHOD.md`, step 5).
 
 ### Page 1: Portfolio overview
 
-Question it answers: *what is in the portfolio, and what did we decide?*
+Question it answers: *what is in the portfolio, what did we decide, and where
+does each case stand?* Show the as-of date (`as_of`) in the page title.
 
 | Visual | Fields |
 |---|---|
 | Cards | Use cases; Base NPV of approved cases; Cases with a negative scenario |
-| Table, sorted by rank | rank, use_case_id, short_title, weighted_score (data bar), decision (colour by decision), ai_act_category, npv_pessimistic_eur / npv_base_eur / npv_optimistic_eur, gate_outcomes |
-| Stacked bar | Use cases by decision (go, go with conditions, pilot, park, reject) |
+| Table, sorted by rank | rank, use_case_id, short_title, weighted_score (data bar), status (colour by status), ai_act_category, npv_pessimistic_eur / npv_base_eur / npv_optimistic_eur, decision_history, gate_outcomes, other_reviews, next_review |
+| Stacked bar | Use cases by status (go, go with conditions, pilot, park, reject, stopped) |
 | Scatter | Value vs. feasibility: import the scores from `outputs/ranking.csv` as an extra table, or show `outputs/value_feasibility_matrix.png` as an image |
 
-Use the same decision colours as the static charts (`DECISION_COLOURS` in
+Use the same colours as the static charts (`DECISION_COLOURS` in
 `scoring/decision.py`).
 
 ### Page 2: Value delivered
@@ -159,11 +166,12 @@ Question it answers: *are the live cases delivering what the business case promi
 | Line chart, small multiples by use case | dim_date[MonthStart]; Cumulative planned value (dashed) and Cumulative realised value |
 | Cards | Realised value; Value vs. plan %; Value gap |
 | Matrix | use_case_id × MonthLabel, values: Value vs. plan % with the conditional formatting rule |
-| Slicer | decision, use_case_id |
+| Slicer | status, use_case_id |
 
-Mark the review gates on the line chart with a constant line per gate date, or
-add a small `gate_events` table (use_case_id, date, outcome) taken from
-`gate_outcomes`.
+Mark the reviews on the line chart with a constant line per date, or add a
+small `review_events` table (use_case_id, date, kind, outcome) split from
+`gate_outcomes`, `other_reviews` and `decision_history`. A stopped case (UC-05)
+has no rows after its stop month.
 
 ### Page 3: Adoption and incidents
 

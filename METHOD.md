@@ -220,8 +220,11 @@ the re-run, with the expected effect and cost of the rework actions, has a
 positive NPV; it gets named actions and a new gate within 3 months. If no
 trigger is reached, the case continues. Gate outcomes are added to section 9
 of the decision record (`gate_reviews` in `decision.yaml`), and the generator
-refuses an outcome that breaks these rules. UC-03 in `examples/` shows a gate
-firing and a rework.
+refuses an outcome that breaks these rules. A *continue* sets the date of the
+next review. A new decision on the case (for example pilot → go with
+conditions) gets a new decision record, with its own gate if a scenario is
+still negative. In `examples/`, UC-03 shows a gate firing, a rework and a
+second decision record; UC-05 shows a pilot stopped at its gate.
 
 **Typical failure modes**
 
@@ -254,7 +257,11 @@ and decide whether to scale, fix or stop.
   overview, cumulative planned vs. realised value with the review gates, and
   adoption against plan. The Power BI design for a management dashboard is in
   [`dashboard/README.md`](dashboard/README.md).
-- A review decision, recorded in the decision record.
+- A review decision, recorded in section 9 of the decision record with the
+  date of the next review (`review_log` in `decision.yaml`). No review may be
+  skipped: `python -m scoring.build_examples` checks that every review due by
+  the portfolio's as-of date (`examples/portfolio.yaml`) is recorded, and that
+  value tracking runs to that date.
 
 **Who is involved**
 - Process owner: reports the actuals and explains gaps.
@@ -262,8 +269,11 @@ and decide whether to scale, fix or stop.
 - Portfolio lead: consolidates the portfolio view.
 - Sponsor: takes the scale / fix / stop decision at each review.
 
-**Decision at the end of each review:** *scale* (extend to more sites, users or
-document types), *fix* (named actions and a new review date) or *stop*.
+**Decision at the end of each review:** *continue*, *scale* (extend to more
+sites, users or document types), *fix* (named actions and a new review date)
+or *stop*. A parked case gets a *park review* against its reopening trigger:
+*remain parked* or *reopen* (a new intake). In the examples, value reviews
+take place every 6 months.
 
 Suggested review rule, to adjust to your context: after six months, if realised
 value is below 50% of plan and there is no credible fix, stop; if it is above
@@ -278,6 +288,65 @@ value is below 50% of plan and there is no credible fix, stop; if it is above
 | Attribution | Another improvement project changes the same KPI. | Note other changes in the `notes` column and agree the attribution with controlling. |
 | Sunk-cost reasoning | A failing case continues because money has been spent. | Use the review rule above and decide on future cost and benefit only. |
 | Silent degradation | Accuracy drops as suppliers or document formats change. | Track incidents and a quality sample every month, not only adoption. |
+
+---
+
+## Measuring realised value in practice
+
+The value tracking in step 5 is only as credible as the measurement behind
+`realised_benefit_eur`. Four practices make the difference between a number a
+controller signs and a number nobody trusts.
+
+**1. Measure the baseline before go-live.** Measure the same quantities that
+the business case uses (volume, handling time, error rate, cost per error)
+before the solution is switched on, for 4 to 8 weeks of normal activity, and
+with the method you will use afterwards. Record the baseline, its period and
+its method in the assumptions log, then freeze it. A baseline rebuilt from
+memory after go-live tends to make the old process look worse than it was.
+If the process is seasonal, measure in a comparable period or note the gap.
+
+**2. Sample time; do not estimate it.** "It saves about 5 minutes" is an
+opinion. Use one of these instead, and use the same one before and after:
+- a **time study** on a random sample of transactions (for example 30 to 50
+  per period, spread over days and people), timed from start to end;
+- **system timestamps** (opened → closed) where they reflect real work and
+  not waiting time;
+- **work sampling**: at random moments, record what people are doing, and
+  derive the share of time spent on the task.
+
+Report the median and the spread, not only the average, and the sample size.
+Measure quality the same way: a blind audit of a sample (for example 300
+records) against the same rules as the baseline.
+
+**3. Compare with a group or a period without the AI.** A before/after
+comparison also captures everything else that changed. Where possible, keep a
+comparison group: a team, site or document type that does not use the
+solution yet. A staggered roll-out gives one for free. The gain is then the
+change in the AI group minus the change in the comparison group over the same
+period (a difference-in-differences). Check that both groups moved in the same
+way before go-live; if they did not, the comparison is weak, and you say so.
+Without a comparison group, at least compare with the same months of the
+previous year.
+
+**4. Attribute gains when other changes happen at the same time.** A new ERP
+release, a reorganisation, a volume drop or another improvement project can
+move the same KPI.
+- Log every such change in the `notes` column, with its date.
+- Agree the attribution rule with controlling **before go-live**, not when the
+  numbers come in: for example, "the comparison group absorbs common effects",
+  or "a fixed share of the combined gain, agreed with the other project owner".
+- If the effects cannot be separated, report the combined gain once and say
+  which projects share it. Never count it in full in two business cases (see
+  "Benefit counted twice", step 4).
+- Hours saved become money only with evidence of redeployment or an avoided
+  cost: a backlog that shrinks, overtime or temporary staff no longer paid, an
+  external cost not incurred.
+
+In the examples, the gate measurements follow these rules: UC-01 times 50
+delivery notes, and UC-03 audits 300 work orders blind. The realised values
+in `data/value_tracking.csv` are fictional. They are derived from the business
+case model with the measured inputs, so they show the mechanics of tracking,
+not the difficulty of measuring in a real organisation.
 
 ---
 

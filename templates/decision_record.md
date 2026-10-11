@@ -5,10 +5,12 @@ use case, including park and reject decisions. Keep it to one page. Copy it to
 `examples/<ID>_<short_name>/decision_record.md`, or write a `decision.yaml`
 and generate the record with `python -m scoring.build_examples` (scores,
 triage and business case figures are then filled in automatically, and the
-downside rule is checked). Review-gate outcomes (continue, rework or stop)
-are added to section 9 of the same record. Any other new decision on the same
-use case (for example pilot → go after a value review) gets a new record; do
-not overwrite the old one.
+downside rule is checked). Reviews held under this decision (review-gate
+outcomes: continue, rework or stop; later value or park reviews: continue,
+scale, fix, stop, remain parked or reopen) are added to section 9 of the same
+record. Any other new decision on the same use case (for example pilot → go
+with conditions after the pilot gate) gets a new record that links to the old
+one (`decision_2.yaml`, `decision_3.yaml` ...); do not overwrite the old one.
 
 > **Fictional examples only.** Records in `examples/` describe the fictional
 > company "Northwind Aero Services".
@@ -129,9 +131,12 @@ include success criteria and stop criteria with numbers.
 | What will be reviewed | `<e.g. realised vs. planned value, adoption, incidents>` |
 | Reopening trigger (park only) | `<e.g. "data owner assigned", "24 months of demand history available">` |
 
-## 9. Review gate outcomes
+## 9. Review history
 
-One block per gate held (only when section 5 sets a review gate).
+Every review held under this decision, in date order, then the status on the
+date the record is read. No review due may be missing.
+
+**Review gates** (only when section 5 sets a review gate). One block per gate held.
 
 | Trigger | Stop or rework if | Measured | Reached? |
 |---|---|---|---|
@@ -141,3 +146,12 @@ One block per gate held (only when section 5 sets a review gate).
 - Rework only: re-run with the rework plan and its cost: `<€>` (must be positive).
 - Gate decision: `<continue / rework / stop>`, with the reason.
 - Rework only: actions (action, owner, due date) and the next gate date (within 3 months).
+- Continue only: the next review date (value review).
+
+**Other reviews** (value reviews after go-live, park reviews).
+
+| Date | Review | Outcome | What was found | Next review |
+|---|---|---|---|---|
+| `<YYYY-MM-DD>` | `<value review / park review>` | `<continue / scale / fix / stop / remain parked / reopen>` | `<one or two sentences>` | `<YYYY-MM-DD, or none after stop or reopen>` |
+
+**Status as of `<YYYY-MM-DD>`:** `<next review due on ... / stopped on ... / superseded on ... by ...>`
