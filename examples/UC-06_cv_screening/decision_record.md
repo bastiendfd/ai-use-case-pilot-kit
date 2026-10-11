@@ -80,3 +80,9 @@ No review gate now, because the decision is reject and nothing is built. If the 
 | Review date | not applicable |
 | What will be reviewed | Reopened only with a materially new intake. |
 | Reopening trigger (park only) | not applicable |
+
+## 9. Review history
+
+No review planned.
+
+**Status as of 2027-12-31:** rejected. No further review.
