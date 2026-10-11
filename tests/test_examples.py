@@ -13,7 +13,7 @@ from scoring import business_case as bc
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = ROOT / "examples"
 
-EXPECTED = {  # id: (AI Act category, decision)
+EXPECTED = {  # id: (AI Act category, first decision), as in the project brief
     "UC-01": ("minimal", "go_with_conditions"),
     "UC-02": ("minimal", "go"),
     "UC-03": ("minimal", "pilot"),
@@ -53,7 +53,12 @@ def test_committed_generated_files_are_up_to_date(generated):
 
 
 def test_expected_outcomes(table):
-    assert {uc: (r["ai_act_category"], r["decision"]) for uc, r in table.items()} == EXPECTED
+    first = {uc: r["decision_history"].split(" (")[0] for uc, r in table.items()}
+    assert {uc: (r["ai_act_category"], first[uc]) for uc, r in table.items()} == EXPECTED
+    # Where the story stands on the as-of date (2027-12-31).
+    assert {uc: r["status"] for uc, r in table.items()} == {
+        "UC-01": "go_with_conditions", "UC-02": "go", "UC-03": "go_with_conditions",
+        "UC-04": "park", "UC-05": "stopped", "UC-06": "reject"}
     assert table["UC-01"]["quadrant"] == "quick win" and table["UC-01"]["rank"] == 1
 
 
@@ -118,6 +123,7 @@ def test_uc03_record_shows_the_gate_firing_and_the_rework():
 
 
 def test_gate_outcomes_in_decisions_table(table):
-    assert table["UC-03"]["gate_outcomes"] == "rework (2027-03-01), continue (2027-06-01)"
+    assert table["UC-03"]["gate_outcomes"] == "rework (2027-03-01), continue (2027-06-01), continue (2027-10-01)"
     assert table["UC-01"]["gate_outcomes"] == "continue (2027-04-11)"
-    assert all(table[uc]["gate_outcomes"] == "" for uc in ("UC-02", "UC-04", "UC-05", "UC-06"))
+    assert table["UC-05"]["gate_outcomes"] == "stop (2027-04-11)"
+    assert all(table[uc]["gate_outcomes"] == "" for uc in ("UC-02", "UC-04", "UC-06"))

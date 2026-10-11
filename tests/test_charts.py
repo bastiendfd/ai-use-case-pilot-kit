@@ -32,13 +32,15 @@ def folder(uc: str) -> Path:
 # ---------------------------------------------------------------------------
 
 
-def test_tracking_has_the_required_columns_and_12_months_per_case(tracking):
+def test_tracking_runs_from_start_to_the_as_of_date(tracking):
     with open(TRACKING, encoding="utf-8") as handle:
         assert tuple(next(csv.reader(handle))) == charts.TRACKING_COLUMNS
-    assert tracking.groupby("use_case_id").size().to_dict() == {"UC-01": 12, "UC-02": 12, "UC-03": 12}
+    # Start month to December 2027 (as-of date), or to the stop month for UC-05.
+    assert tracking.groupby("use_case_id").size().to_dict() == {"UC-01": 12, "UC-02": 13, "UC-03": 13, "UC-05": 4}
+    assert tracking["month"].max() == pd.Timestamp("2027-12-01")
 
 
-@pytest.mark.parametrize("uc", ["UC-01", "UC-02", "UC-03"])
+@pytest.mark.parametrize("uc", ["UC-01", "UC-02", "UC-03", "UC-05"])
 def test_tracking_starts_at_go_live_and_planned_matches_the_business_case(tracking, uc):
     import yaml
     decision = yaml.safe_load((folder(uc) / "decision.yaml").read_text(encoding="utf-8"))
@@ -47,7 +49,7 @@ def test_tracking_starts_at_go_live_and_planned_matches_the_business_case(tracki
     assert g["month"].iloc[0] == start
     case = bc.load_inputs(folder(uc) / "business_case_inputs.yaml")
     plan = bc.compute(case.values("base"))["months"]
-    assert list(g["planned_benefit_eur"]) == [round(plan[m]["benefit"]) for m in range(1, 13)]
+    assert list(g["planned_benefit_eur"]) == [round(plan[m]["benefit"]) for m in range(1, len(g) + 1)]
 
 
 def test_uc03_under_delivers_with_an_explanation(tracking):
@@ -112,7 +114,20 @@ def test_charts_refuse_tracking_for_unknown_use_cases(tmp_path, capsys):
 def test_portfolio_overview_lists_every_decision():
     decisions = charts.load_decisions(DECISIONS)
     assert list(decisions["id"]) == ["UC-01", "UC-02", "UC-03", "UC-05", "UC-04", "UC-06"]  # rank order
-    assert decisions.set_index("id").loc["UC-03", "gate_outcomes"] == "rework (2027-03-01), continue (2027-06-01)"
+    assert decisions.set_index("id").loc["UC-03", "gate_outcomes"] == \
+        "rework (2027-03-01), continue (2027-06-01), continue (2027-10-01)"
+    assert decisions.set_index("id")["status"].to_dict() == {
+        "UC-01": "go_with_conditions", "UC-02": "go", "UC-03": "go_with_conditions",
+        "UC-05": "stopped", "UC-04": "park", "UC-06": "reject"}
+
+
+def test_story_events_follow_the_decision_history():
+    row = charts.load_decisions(DECISIONS).set_index("id").loc["UC-03"]
+    events = [(f"{d:%Y-%m-%d}", kind, label) for d, kind, label in charts.story_events(row)]
+    assert events == [("2027-03-01", "gate", "rework"), ("2027-06-01", "gate", "continue"),
+                      ("2027-06-10", "decision", "go w/ cond."), ("2027-10-01", "gate", "continue")]
+    uc02 = charts.load_decisions(DECISIONS).set_index("id").loc["UC-02"]
+    assert [label for _, _, label in charts.story_events(uc02)] == ["continue", "scale"]
 
 
 # ---------------------------------------------------------------------------
