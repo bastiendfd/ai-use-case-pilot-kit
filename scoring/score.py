@@ -556,20 +556,25 @@ def _display_path(path: Path) -> str:
 
 
 def load_decisions(path: Path) -> dict[str, str]:
-    """Read {use-case id: decision} from a CSV with 'id' and 'decision' columns."""
-    from scoring.decision import DECISIONS
+    """Read {use-case id: status} from a CSV with 'id' and 'status' (or 'decision') columns.
+
+    The status is the decision of the latest record, or 'stopped' when a review
+    ended the case (outputs/decisions.csv has both columns).
+    """
+    from scoring.decision import STATUS_LABELS
 
     path = Path(path)
     if not path.is_file():
         raise InputError([f"Decisions file not found: {path}"])
     df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    missing = [c for c in ("id", "decision") if c not in df.columns]
+    column = "status" if "status" in df.columns else "decision"
+    missing = [c for c in ("id", column) if c not in df.columns]
     if missing:
         raise InputError([f"{path}: missing column(s): {', '.join(missing)}."])
-    bad = sorted(set(df["decision"]) - set(DECISIONS))
+    bad = sorted(set(df[column]) - set(STATUS_LABELS))
     if bad:
-        raise InputError([f"{path}: unknown decision(s): {', '.join(bad)}. Use: {', '.join(DECISIONS)}."])
-    return dict(zip(df["id"], df["decision"]))
+        raise InputError([f"{path}: unknown decision(s): {', '.join(bad)}. Use: {', '.join(STATUS_LABELS)}."])
+    return dict(zip(df["id"], df[column]))
 
 
 def write_matrix(ranked: pd.DataFrame, criteria: Criteria, output_dir: Path, fictional: bool,
@@ -588,7 +593,7 @@ def write_matrix(ranked: pd.DataFrame, criteria: Criteria, output_dir: Path, fic
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
 
-    from scoring.decision import DECISION_COLOURS, DECISIONS
+    from scoring.decision import DECISION_COLOURS, STATUS_LABELS
 
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / "value_feasibility_matrix.png"
@@ -675,15 +680,15 @@ def write_matrix(ranked: pd.DataFrame, criteria: Criteria, output_dir: Path, fic
     ax.set_title(title)
     handles = []
     if decisions:
-        shown = [k for k in DECISIONS if k in set(decisions.get(i) for i in ranked["id"])]
+        shown = [k for k in STATUS_LABELS if k in set(decisions.get(i) for i in ranked["id"])]
         handles += [Line2D([], [], marker="o", linestyle="", markersize=9, markerfacecolor=DECISION_COLOURS[k],
-                           markeredgecolor=DECISION_COLOURS[k], label=f"Decision: {DECISIONS[k].lower()}")
+                           markeredgecolor=DECISION_COLOURS[k], label=STATUS_LABELS[k])
                     for k in shown]
     else:
         handles.append(Line2D([], [], marker="o", linestyle="", markersize=9, markerfacecolor="0.45",
                               markeredgecolor="0.45", label="Passed the hard gates (no decision shown)"))
     handles.append(Line2D([], [], marker="o", linestyle="", markersize=9, markerfacecolor="white",
-                          markeredgecolor="0.45", markeredgewidth=2, label="Hollow: stopped at a hard gate"))
+                          markeredgecolor="0.45", markeredgewidth=2, label="Hollow: blocked by a hard gate"))
     ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.11), ncol=3, fontsize=8,
               frameon=False)
     ax.text(1.0, 1.01, f"Quadrant lines at {t:g}", transform=ax.transAxes, ha="right", va="bottom",
@@ -744,8 +749,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR,
                         help="Where to write the outputs (default: outputs/).")
     parser.add_argument("--decisions", type=Path, default=None,
-                        help="Optional CSV with 'id' and 'decision' columns (e.g. outputs/decisions.csv) to "
-                             "colour the matrix by decision.")
+                        help="Optional CSV with 'id' and 'status' (or 'decision') columns to colour the matrix "
+                             "by decision. Default for the bundled example: decisions.csv in the output "
+                             "directory, if present.")
     return parser
 
 
@@ -755,7 +761,11 @@ def main(argv: list[str] | None = None) -> int:
         criteria = load_criteria(args.criteria)
         weights = parse_weights(args.weights, criteria) if args.weights else dict(criteria.weights)
         df = load_use_cases(args.input, criteria)
-        decisions = load_decisions(args.decisions) if args.decisions else None
+        decisions_path = args.decisions
+        if decisions_path is None and _is_bundled_example(args.input) \
+                and (args.output_dir / "decisions.csv").is_file():
+            decisions_path = args.output_dir / "decisions.csv"   # keep the example matrix coloured
+        decisions = load_decisions(decisions_path) if decisions_path else None
     except InputError as exc:
         print("Input error:", file=sys.stderr)
         for message in exc.errors:
